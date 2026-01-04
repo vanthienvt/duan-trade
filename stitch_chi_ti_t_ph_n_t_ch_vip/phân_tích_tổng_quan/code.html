@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Phân Tích Tổng Quan</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922", // Adjusted to match the requested dark tone
+                        "card-dark": "#1c2127",
+                        "text-secondary": "#9dabb9",
+                        "signal-long": "#10b981", // Emerald 500
+                        "signal-short": "#ef4444", // Red 500
+                        "signal-neutral": "#6b7280", // Gray 500
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-x-hidden antialiased">
+    <div
+        class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-xl">
+        <!-- Header -->
+        <div
+            class="sticky top-0 z-50 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-gray-200 dark:border-gray-800">
+            <h2 class="text-gray-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] flex-1">Phân
+                Tích Tổng Quan</h2>
+            <div class="flex items-center justify-end gap-3">
+                <button
+                    class="flex items-center justify-center rounded-full h-10 w-10 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white transition-colors hover:bg-gray-300 dark:hover:bg-gray-700">
+                    <span class="material-symbols-outlined text-[24px]">notifications</span>
+                </button>
+                <button
+                    class="flex items-center justify-center rounded-full h-10 w-10 bg-primary text-white shadow-lg shadow-primary/30">
+                    <span class="material-symbols-outlined text-[24px]">account_circle</span>
+                </button>
+            </div>
+        </div>
+        <!-- Meta Info -->
+        <div class="w-full bg-background-light dark:bg-background-dark pt-2">
+            <div class="flex items-center justify-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <p class="text-text-secondary text-xs font-medium leading-normal text-center uppercase tracking-wide">
+                    Cập nhật: 10:30 AM • Hôm nay</p>
+            </div>
+        </div>
+        <!-- Hero Signal Card -->
+        <div class="p-4 w-full">
+            <div class="relative w-full overflow-hidden rounded-2xl bg-card-dark shadow-2xl ring-1 ring-white/10 group">
+                <!-- Abstract Background with Glow -->
+                <div class="absolute inset-0 bg-gradient-to-br from-[#1a2c42] to-[#10151a] z-0"></div>
+                <div
+                    class="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2">
+                </div>
+                <div
+                    class="absolute bottom-0 left-0 w-48 h-48 bg-signal-long/10 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/2">
+                </div>
+                <!-- Content -->
+                <div class="relative z-10 p-6 flex flex-col items-center text-center">
+                    <p class="text-text-secondary text-sm font-medium uppercase tracking-widest mb-2">Tín Hiệu Thị
+                        Trường</p>
+                    <h1 class="text-5xl font-black text-signal-long tracking-tight drop-shadow-sm mb-1">LONG</h1>
+                    <!-- Confidence Meter -->
+                    <div class="w-full max-w-[200px] mt-4 mb-2">
+                        <div class="flex justify-between text-xs text-text-secondary mb-1">
+                            <span>Yếu</span>
+                            <span class="text-white font-bold">Độ tin cậy: 87%</span>
+                            <span>Mạnh</span>
+                        </div>
+                        <div class="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                                class="h-full bg-gradient-to-r from-green-600 to-signal-long w-[87%] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-text-secondary mt-3 italic opacity-80">AI phân tích dựa trên dữ liệu 4H
+                        timeframe</p>
+                </div>
+            </div>
+        </div>
+        <!-- Ticker: Recent Alerts -->
+        <div class="px-4 pb-2">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-white text-base font-bold">Cảnh báo mới nhất</h3>
+                <span class="text-primary text-xs font-bold cursor-pointer">Xem tất cả</span>
+            </div>
+            <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                <!-- Alert 1 -->
+                <div
+                    class="snap-start flex-none w-[160px] bg-card-dark border border-gray-800 rounded-xl p-3 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400">
+                                S</div>
+                            <span class="font-bold text-sm">SOL</span>
+                        </div>
+                        <span class="text-[10px] text-text-secondary">5m trước</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-signal-long text-xs font-bold">
+                        <span class="material-symbols-outlined text-[16px]">trending_up</span>
+                        <span>Entry Long</span>
+                    </div>
+                </div>
+                <!-- Alert 2 -->
+                <div
+                    class="snap-start flex-none w-[160px] bg-card-dark border border-gray-800 rounded-xl p-3 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center text-xs font-bold text-orange-400">
+                                B</div>
+                            <span class="font-bold text-sm">BTC</span>
+                        </div>
+                        <span class="text-[10px] text-text-secondary">15m trước</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-signal-neutral text-xs font-bold">
+                        <span class="material-symbols-outlined text-[16px]">remove_circle_outline</span>
+                        <span>Sit Out</span>
+                    </div>
+                </div>
+                <!-- Alert 3 -->
+                <div
+                    class="snap-start flex-none w-[160px] bg-card-dark border border-gray-800 rounded-xl p-3 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">
+                                E</div>
+                            <span class="font-bold text-sm">ETH</span>
+                        </div>
+                        <span class="text-[10px] text-text-secondary">32m trước</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-signal-short text-xs font-bold">
+                        <span class="material-symbols-outlined text-[16px]">trending_down</span>
+                        <span>Short Setup</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Analysis Grid Title -->
+        <h2 class="text-white text-lg font-bold leading-tight px-4 pb-3 pt-2">Chi Tiết Phân Tích</h2>
+        <!-- Analysis Grid -->
+        <div class="grid grid-cols-2 gap-3 px-4 mb-24">
+            <!-- Trend -->
+            <div
+                class="flex flex-col gap-3 rounded-xl border border-gray-800 bg-card-dark p-4 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <span class="material-symbols-outlined text-[48px] text-primary">trending_up</span>
+                </div>
+                <div class="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-[24px]">trending_up</span>
+                </div>
+                <div class="flex flex-col gap-1 z-10">
+                    <h3 class="text-text-secondary text-xs font-medium uppercase">Xu Hướng</h3>
+                    <p class="text-white text-base font-bold leading-tight">Tăng Mạnh</p>
+                </div>
+            </div>
+            <!-- Liquidity -->
+            <div
+                class="flex flex-col gap-3 rounded-xl border border-gray-800 bg-card-dark p-4 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <span class="material-symbols-outlined text-[48px] text-teal-400">water_drop</span>
+                </div>
+                <div class="h-10 w-10 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
+                    <span class="material-symbols-outlined text-[24px]">ssid_chart</span>
+                </div>
+                <div class="flex flex-col gap-1 z-10">
+                    <h3 class="text-text-secondary text-xs font-medium uppercase">Thanh Khoản</h3>
+                    <p class="text-white text-base font-bold leading-tight">Ổn Định</p>
+                </div>
+            </div>
+            <!-- Sentiment -->
+            <div
+                class="flex flex-col gap-3 rounded-xl border border-gray-800 bg-card-dark p-4 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <span class="material-symbols-outlined text-[48px] text-orange-400">sentiment_satisfied</span>
+                </div>
+                <div class="h-10 w-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
+                    <span class="material-symbols-outlined text-[24px]">mood</span>
+                </div>
+                <div class="flex flex-col gap-1 z-10">
+                    <h3 class="text-text-secondary text-xs font-medium uppercase">Tâm Lý</h3>
+                    <p class="text-white text-base font-bold leading-tight">Hưng Phấn</p>
+                </div>
+            </div>
+            <!-- Risk -->
+            <div
+                class="flex flex-col gap-3 rounded-xl border border-gray-800 bg-card-dark p-4 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <span class="material-symbols-outlined text-[48px] text-purple-400">shield</span>
+                </div>
+                <div class="h-10 w-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                    <span class="material-symbols-outlined text-[24px]">shield</span>
+                </div>
+                <div class="flex flex-col gap-1 z-10">
+                    <h3 class="text-text-secondary text-xs font-medium uppercase">Rủi Ro</h3>
+                    <p class="text-white text-base font-bold leading-tight">Trung Bình</p>
+                </div>
+            </div>
+        </div>
+        <!-- Sticky Bottom CTA -->
+        <div
+            class="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background-light dark:bg-background-dark/80 backdrop-blur-md border-t border-gray-800 max-w-md mx-auto">
+            <button
+                class="w-full flex items-center justify-center gap-2 rounded-xl bg-primary h-12 text-white text-base font-bold shadow-lg shadow-primary/40 hover:bg-primary/90 active:scale-[0.98] transition-all">
+                Danh Sách Altcoin Tiềm Năng
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+            </button>
+        </div>
+        <!-- Bottom Spacer -->
+        <div class="h-8 w-full bg-transparent"></div>
+    </div>
+</body>
+
+</html>

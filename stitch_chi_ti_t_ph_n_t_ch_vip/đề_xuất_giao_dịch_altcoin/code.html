@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Đề Xuất Giao Dịch Altcoin</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1c242d",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased">
+    <div class="relative flex h-full min-h-screen w-full flex-col overflow-hidden pb-20">
+        <!-- Header -->
+        <div
+            class="sticky top-0 z-10 flex items-center justify-between bg-background-light/90 dark:bg-background-dark/90 px-4 py-3 backdrop-blur-md">
+            <div>
+                <h1 class="text-xl font-bold leading-tight tracking-tight">Tín Hiệu AI</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Cập nhật: Vừa xong</p>
+            </div>
+            <button
+                class="group flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-surface-dark dark:hover:bg-[#2a3441] transition-colors">
+                <span class="material-symbols-outlined text-slate-700 dark:text-white"
+                    style="font-size: 24px;">tune</span>
+            </button>
+        </div>
+        <!-- Scrollable Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- BTC Market Context -->
+            <div class="px-4 py-2">
+                <div
+                    class="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#1c242d] to-[#101922] p-4 shadow-sm border border-slate-200 dark:border-slate-800">
+                    <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-green-500/10 to-transparent">
+                    </div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-[#f7931a]/20">
+                            <span class="material-symbols-outlined text-[#f7931a]"
+                                style="font-size: 28px;">currency_bitcoin</span>
+                        </div>
+                        <div class="flex flex-1 flex-col">
+                            <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Tín hiệu thị trường</p>
+                            <h2 class="text-base font-bold text-slate-900 dark:text-white">Xu hướng Bitcoin (BTC)</h2>
+                            <div class="mt-1 flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">trending_up</span>
+                                <span class="text-sm font-semibold">Tăng trưởng (Bullish)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Filter Chips -->
+            <div class="flex w-full gap-2 overflow-x-auto px-4 py-2 no-scrollbar">
+                <button
+                    class="whitespace-nowrap rounded-full bg-slate-900 px-4 py-1.5 text-sm font-medium text-white shadow-sm dark:bg-white dark:text-slate-900">
+                    Tất cả
+                </button>
+                <button
+                    class="whitespace-nowrap rounded-full bg-white border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-600 shadow-sm dark:bg-surface-dark dark:border-slate-700 dark:text-slate-300">
+                    Long (Mua)
+                </button>
+                <button
+                    class="whitespace-nowrap rounded-full bg-white border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-600 shadow-sm dark:bg-surface-dark dark:border-slate-700 dark:text-slate-300">
+                    Short (Bán)
+                </button>
+                <button
+                    class="whitespace-nowrap rounded-full bg-white border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-600 shadow-sm dark:bg-surface-dark dark:border-slate-700 dark:text-slate-300">
+                    Uy tín cao
+                </button>
+            </div>
+            <!-- Section Header -->
+            <div class="flex items-center justify-between px-4 py-2 mt-2">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Cơ hội mới nhất</h3>
+                <span class="text-xs font-medium text-primary cursor-pointer">Xem tất cả</span>
+            </div>
+            <!-- Signal List -->
+            <div class="flex flex-col gap-3 px-4 pb-4">
+                <!-- Card 1: LONG -->
+                <div
+                    class="group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm transition-all active:scale-[0.98] dark:bg-surface-dark dark:shadow-none border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-full bg-slate-100 bg-center bg-cover border border-slate-200 dark:border-slate-700"
+                                data-alt="Ethereum logo icon"
+                                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA0zQiQ4lVchIh81G2V5xqhdvPWJ822hA0MWfov9kwQmx82h4a8fyItZHCqSaLzK0R-BYK6rTySa4wrAQbqWfGkPY4uiaafddNM3F2tUygAxBxxx7bPIrM5UNxIddhZuoTEeNCnZgUJK8n-D6gJPF4d-xjS3x9q8jDD4TsF00EUaiBz3mIxvzi9VZYJ_yVu5wnm7RwvTasbfhgczWCPjcmVtQQ6gGjjPGKxEP_4ODv67ouC9q_vQD1hoA3BjVRd28gNjYenFQoiI7M');">
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-base font-bold text-slate-900 dark:text-white">ETH/USDT</h4>
+                                    <span
+                                        class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">1H</span>
+                                </div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Entry: $2,240 - $2,255
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span
+                                class="inline-flex items-center gap-1 rounded-md bg-green-500/10 px-2.5 py-1 text-xs font-bold text-green-600 dark:bg-green-500/20 dark:text-green-400">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">arrow_upward</span>
+                                LONG
+                            </span>
+                            <span class="text-xs font-semibold text-primary">92% Uy tín</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-background-dark/50">
+                        <span class="material-symbols-outlined text-primary"
+                            style="font-size: 16px;">tips_and_updates</span>
+                        <p class="truncate text-xs font-medium text-slate-600 dark:text-slate-300">Volume đột biến, phá
+                            vỡ cản trên</p>
+                    </div>
+                </div>
+                <!-- Card 2: SHORT -->
+                <div
+                    class="group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm transition-all active:scale-[0.98] dark:bg-surface-dark dark:shadow-none border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-full bg-slate-100 bg-center bg-cover border border-slate-200 dark:border-slate-700"
+                                data-alt="Cardano logo icon"
+                                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDZuiPIS0_rHQZ7gZxcEQ5GF-BBVXTgKJnW5mQjhVQ9-YITuKaO88LSqc45jrsK-GdWCao2K8CRi5QLIBLHuiEHIA-Kumx8M2TZDST9JdbtZwn3gvnBOVKfSByCZBAbT4bJhEcBGNfrjQpslA8IG4p039W8V4d-QvCv9oTrEl0qHMVz1NGSER2PapsNS5ekQBdaexLAUnfvOubB_Io7Te1cf8_dqBbtgjc8PZhr9caY7agANBOOsgnUH902N24L1Avj5ZURRsIVjL4');">
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-base font-bold text-slate-900 dark:text-white">ADA/USDT</h4>
+                                    <span
+                                        class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">4H</span>
+                                </div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Entry: $0.452 - $0.460
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span
+                                class="inline-flex items-center gap-1 rounded-md bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">arrow_downward</span>
+                                SHORT
+                            </span>
+                            <span class="text-xs font-semibold text-orange-500">85% Uy tín</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-background-dark/50">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 16px;">analytics</span>
+                        <p class="truncate text-xs font-medium text-slate-600 dark:text-slate-300">Mô hình nêm giảm, RSI
+                            phân kỳ</p>
+                    </div>
+                </div>
+                <!-- Card 3: LONG -->
+                <div
+                    class="group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm transition-all active:scale-[0.98] dark:bg-surface-dark dark:shadow-none border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-full bg-slate-100 bg-center bg-cover border border-slate-200 dark:border-slate-700"
+                                data-alt="Solana logo icon"
+                                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCpjvVcT2o16xZHppcpItAoKMCjoRFWMWMnYwteIPHSGHLVM9yKAre-ZKHDSW09ySMTOKKr83OAmwnokwDvYEZm8Xmgg5QtgBlJuXMqcSYd2huztout8IkTfB0vDfO-HaGNgmf3nDkuCsb-V9A2wkgvLMh6vC_gSvYn1Fi7cqm0YU4B-hl7xlSNBm0hwKw33a5mZ2rMI1S5K8s1_mBGKME8veyouZlGo5JI8samxhzYnnZ4Uj6SBo3hhZiGibZYkuzWIbMuB4yEL_k');">
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-base font-bold text-slate-900 dark:text-white">SOL/USDT</h4>
+                                    <span
+                                        class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">15m</span>
+                                </div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Entry: $98.50 - $99.00
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span
+                                class="inline-flex items-center gap-1 rounded-md bg-green-500/10 px-2.5 py-1 text-xs font-bold text-green-600 dark:bg-green-500/20 dark:text-green-400">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">arrow_upward</span>
+                                LONG
+                            </span>
+                            <span class="text-xs font-semibold text-primary">88% Uy tín</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-background-dark/50">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 16px;">bolt</span>
+                        <p class="truncate text-xs font-medium text-slate-600 dark:text-slate-300">Dòng tiền thông minh
+                            nhập cuộc</p>
+                    </div>
+                </div>
+                <!-- Card 4: SHORT -->
+                <div
+                    class="group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm transition-all active:scale-[0.98] dark:bg-surface-dark dark:shadow-none border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-full bg-slate-100 bg-center bg-cover border border-slate-200 dark:border-slate-700"
+                                data-alt="XRP logo icon"
+                                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAEeesGHGBWPlBgZo0_sMGVvoPz0wH5H_fO4GtQu0_CM0dogPBmgfiKR7DQNAW27oqxFmkPpYkKGiGkB8xhg0xcNqbQ7DfMu6brQVyuGh2fDhy8nm6d43vSiVfBsqETsGJPY3-w8IVa2lB2ByEX2lH2p-jrbLY9FF3VIMaAMnqpU2Vw8IGdoAvblPVyMUby8Oe1TGf0IxfCgHWr9rVJjexrYmjvkyWcH1b0oNKDiz79pCx8SOXkiVyhKzwvMk76zsNOE0EKpBIzrAU');">
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-base font-bold text-slate-900 dark:text-white">XRP/USDT</h4>
+                                    <span
+                                        class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">1D</span>
+                                </div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Entry: $0.61 - $0.62
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span
+                                class="inline-flex items-center gap-1 rounded-md bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">arrow_downward</span>
+                                SHORT
+                            </span>
+                            <span class="text-xs font-semibold text-orange-500">79% Uy tín</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-background-dark/50">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 16px;">show_chart</span>
+                        <p class="truncate text-xs font-medium text-slate-600 dark:text-slate-300">Chạm kháng cự mạnh
+                            khung ngày</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <!-- Bottom Navigation -->
+        <nav
+            class="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-[#101922] pb-safe">
+            <div class="flex h-16 items-center justify-around px-2">
+                <button
+                    class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary">
+                    <span class="material-symbols-outlined" style="font-size: 24px;">home</span>
+                    <span class="text-[10px] font-medium">Trang chủ</span>
+                </button>
+                <button class="flex flex-1 flex-col items-center justify-center gap-1 text-primary">
+                    <span class="material-symbols-outlined fill-current"
+                        style="font-size: 24px;">candlestick_chart</span>
+                    <span class="text-[10px] font-medium">Tín hiệu</span>
+                </button>
+                <button
+                    class="relative flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary">
+                    <div class="absolute right-6 top-1 h-2 w-2 rounded-full bg-red-500"></div>
+                    <span class="material-symbols-outlined" style="font-size: 24px;">pie_chart</span>
+                    <span class="text-[10px] font-medium">Danh mục</span>
+                </button>
+                <button
+                    class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary">
+                    <span class="material-symbols-outlined" style="font-size: 24px;">settings</span>
+                    <span class="text-[10px] font-medium">Cài đặt</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+</body>
+
+</html>

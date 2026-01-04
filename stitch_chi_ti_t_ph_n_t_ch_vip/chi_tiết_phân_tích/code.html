@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Chi Tiết Phân Tích - Crypto AI</title>
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1C252E",
+                        "bullish": "#10B981", // Emerald 500
+                        "bearish": "#F43F5E", // Rose 500
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Custom scrollbar hide for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Accordion transition styles */
+        details>summary {
+            list-style: none;
+        }
+
+        details>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details[open] summary~* {
+            animation: sweep .3s ease-in-out;
+        }
+
+        @keyframes sweep {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px)
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased selection:bg-primary selection:text-white">
+    <div class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden pb-24">
+        <!-- Top App Bar -->
+        <header
+            class="sticky top-0 z-50 flex items-center justify-between bg-card-light/90 dark:bg-card-dark/90 px-4 py-3 backdrop-blur-md shadow-sm border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+                <button
+                    class="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <div class="flex flex-col">
+                    <h1 class="text-base font-bold leading-tight">BTC/USDT</h1>
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Binance Perp</span>
+                </div>
+            </div>
+            <div class="flex flex-col items-end">
+                <p class="text-base font-bold leading-tight">$64,230.50</p>
+                <div class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-bullish text-[14px]"
+                        style="font-variation-settings: 'FILL' 1;">trending_up</span>
+                    <p class="text-bullish text-xs font-bold">+2.45%</p>
+                </div>
+            </div>
+        </header>
+        <!-- Main Content -->
+        <main class="flex flex-col gap-5 p-4">
+            <!-- Title & Metadata -->
+            <div class="flex flex-col gap-1 items-center justify-center py-2">
+                <h2 class="text-2xl font-bold tracking-tight text-center">Chi Tiết Phân Tích</h2>
+                <div
+                    class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full">
+                    <span class="material-symbols-outlined text-[14px]">schedule</span>
+                    <span>Cập nhật 2 phút trước</span>
+                </div>
+            </div>
+            <!-- AI Score Card -->
+            <div
+                class="rounded-2xl bg-gradient-to-br from-card-light to-slate-50 dark:from-card-dark dark:to-[#151b22] p-5 shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+                <!-- Decorative background blur -->
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+                <div class="flex flex-col gap-4 relative z-10">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Độ tin cậy AI</span>
+                        <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">MUA MẠNH</span>
+                    </div>
+                    <div class="flex items-end gap-3">
+                        <span class="text-5xl font-bold tracking-tighter text-slate-900 dark:text-white">85<span
+                                class="text-2xl text-slate-400">%</span></span>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-2 leading-snug max-w-[180px]">
+                            Tín hiệu đồng thuận cao từ 4/5 chỉ báo chính.
+                        </p>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="flex flex-col gap-2">
+                        <div class="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                            <div class="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 relative"
+                                style="width: 85%;">
+                                <div class="absolute inset-0 bg-white/20 w-full h-full animate-pulse"></div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex justify-between text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                            <span>Bán</span>
+                            <span>Trung Lập</span>
+                            <span>Mua</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Analysis Accordions -->
+            <div class="flex flex-col gap-3">
+                <!-- 1. Technical Trend -->
+                <details
+                    class="group rounded-xl bg-card-light dark:bg-card-dark border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 open:shadow-md"
+                    open="">
+                    <summary
+                        class="flex cursor-pointer items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex size-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+                                <span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+                            </div>
+                            <span class="font-semibold text-sm">Xu hướng Chính (Trend)</span>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+                    </summary>
+                    <div class="p-4 pt-2 border-t border-slate-100 dark:border-slate-800/50">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                <span class="text-xs text-slate-500">RSI (14)</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg font-bold">65</span>
+                                    <span
+                                        class="text-[10px] font-bold text-slate-400 uppercase border border-slate-300 dark:border-slate-600 px-1 rounded">Neutral</span>
+                                </div>
+                                <!-- Mini RSI Bar -->
+                                <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mt-1">
+                                    <div class="h-full bg-slate-400 w-1/5 ml-[60%] rounded-full"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                <span class="text-xs text-slate-500">EMA 50/200</span>
+                                <div class="flex items-center gap-1 text-bullish">
+                                    <span class="material-symbols-outlined text-[16px]">verified</span>
+                                    <span class="text-xs font-bold">Golden Cross</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1">Bullish signal confirmed</span>
+                            </div>
+                        </div>
+                        <!-- Support / Resistance -->
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500">Kháng cự (Resistance)</span>
+                                <span class="font-mono font-medium text-bearish">$65,500</span>
+                            </div>
+                            <div class="w-full h-px bg-slate-100 dark:bg-slate-800"></div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500">Hỗ trợ (Support)</span>
+                                <span class="font-mono font-medium text-bullish">$62,800</span>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+                <!-- 2. Liquidity & Stop Hunt -->
+                <details
+                    class="group rounded-xl bg-card-light dark:bg-card-dark border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300">
+                    <summary
+                        class="flex cursor-pointer items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex size-8 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
+                                <span class="material-symbols-outlined text-[20px]">water_drop</span>
+                            </div>
+                            <span class="font-semibold text-sm">Thanh khoản &amp; Stop Hunt</span>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+                    </summary>
+                    <div class="p-4 pt-2 border-t border-slate-100 dark:border-slate-800/50">
+                        <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                            Vùng thanh khoản tập trung cao ở phía trên, khả năng giá sẽ bị hút về để quét thanh khoản
+                            (Stop Hunt).
+                        </p>
+                        <!-- Heatmap Visualization (Abstract) -->
+                        <div class="flex flex-col gap-1 mb-3">
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-12 text-right font-mono text-slate-400">$65k</span>
+                                <div
+                                    class="flex-1 h-4 bg-gradient-to-r from-transparent via-orange-500/50 to-orange-500 rounded relative">
+                                    <span class="absolute right-1 top-0.5 text-[9px] text-white font-bold">HIGH
+                                        LIQ</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-12 text-right font-mono text-slate-400">$64.5k</span>
+                                <div
+                                    class="flex-1 h-4 bg-gradient-to-r from-transparent via-orange-500/30 to-orange-500/60 rounded">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs opacity-50">
+                                <span class="w-12 text-right font-mono text-primary font-bold">Price</span>
+                                <div class="w-0.5 h-4 bg-primary mx-auto relative">
+                                    <div
+                                        class="absolute -left-1 top-1 w-2.5 h-2.5 rounded-full bg-primary animate-ping">
+                                    </div>
+                                </div>
+                                <span class="flex-1"></span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-12 text-right font-mono text-slate-400">$63.5k</span>
+                                <div
+                                    class="flex-1 h-4 bg-gradient-to-r from-transparent via-blue-500/20 to-blue-500/40 rounded">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 flex gap-2 items-start">
+                            <span class="material-symbols-outlined text-orange-500 text-[18px] mt-0.5">warning</span>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-orange-600 dark:text-orange-400">Cảnh báo Stop
+                                    Hunt</span>
+                                <span class="text-xs text-orange-600/80 dark:text-orange-400/80">Có thể quét râu nến tại
+                                    $64,800 trước khi đảo chiều.</span>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+                <!-- 3. Sentiment & Funding -->
+                <details
+                    class="group rounded-xl bg-card-light dark:bg-card-dark border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300">
+                    <summary
+                        class="flex cursor-pointer items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex size-8 items-center justify-center rounded-lg bg-teal-500/10 text-teal-500">
+                                <span class="material-symbols-outlined text-[20px]">psychology</span>
+                            </div>
+                            <span class="font-semibold text-sm">Tâm lý &amp; Funding Rate</span>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+                    </summary>
+                    <div class="p-4 pt-2 border-t border-slate-100 dark:border-slate-800/50">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex flex-col">
+                                <span class="text-xs text-slate-500">Fear &amp; Greed Index</span>
+                                <span class="text-lg font-bold text-bullish">65 (Greed)</span>
+                            </div>
+                            <!-- Simple Gauge Visual -->
+                            <div
+                                class="relative w-24 h-2 bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full">
+                                <div class="absolute -top-1 h-4 w-1 bg-white border border-slate-300 shadow rounded-full"
+                                    style="left: 65%;"></div>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-medium text-slate-500">Funding Rate (AVG)</span>
+                                <span class="text-xs font-bold text-bullish">+0.0100%</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 leading-normal">
+                                Tỷ lệ Funding dương nhẹ. Long đang trả phí cho Short. Tâm lý đám đông lạc quan nhưng
+                                chưa hưng phấn quá mức.
+                            </p>
+                        </div>
+                    </div>
+                </details>
+                <!-- 4. Macro Calendar -->
+                <details
+                    class="group rounded-xl bg-card-light dark:bg-card-dark border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300">
+                    <summary
+                        class="flex cursor-pointer items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex size-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
+                                <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                            </div>
+                            <span class="font-semibold text-sm">Lịch Kinh Tế (Macro)</span>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+                    </summary>
+                    <div class="p-4 pt-2 border-t border-slate-100 dark:border-slate-800/50">
+                        <div class="flex flex-col gap-3">
+                            <!-- Event Item -->
+                            <div class="flex items-start gap-3">
+                                <div class="flex flex-col items-center min-w-[40px] pt-1">
+                                    <span class="text-[10px] text-slate-400">Hôm nay</span>
+                                    <span class="text-xs font-bold">19:30</span>
+                                </div>
+                                <div class="flex-1 pb-3 border-b border-slate-100 dark:border-slate-800/50">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-sm font-medium">CPI Hoa Kỳ (YoY)</span>
+                                        <span
+                                            class="px-1.5 py-0.5 bg-red-500/10 text-red-500 text-[9px] font-bold rounded border border-red-500/20">HIGH</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500">Dự báo: 3.1% - Trước đó: 3.2%</p>
+                                </div>
+                            </div>
+                            <!-- Event Item -->
+                            <div class="flex items-start gap-3">
+                                <div class="flex flex-col items-center min-w-[40px] pt-1">
+                                    <span class="text-[10px] text-slate-400">Ngày mai</span>
+                                    <span class="text-xs font-bold">01:00</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-sm font-medium">Biên bản họp FOMC</span>
+                                        <span
+                                            class="px-1.5 py-0.5 bg-yellow-500/10 text-yellow-500 text-[9px] font-bold rounded border border-yellow-500/20">MED</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500">Có thể gây biến động giá ngắn hạn.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <!-- Risk Warning Disclaimer -->
+            <div class="mt-4 p-4 rounded-xl bg-slate-100 dark:bg-slate-800/40 text-center">
+                <p class="text-[10px] text-slate-400 leading-relaxed">
+                    *Phân tích này được tạo tự động bởi AI dựa trên dữ liệu quá khứ. Giao dịch tiền mã hóa có rủi ro
+                    cao. Vui lòng tự nghiên cứu (DYOR) trước khi quyết định.
+                </p>
+            </div>
+        </main>
+        <!-- Sticky Action Bar -->
+        <div
+            class="fixed bottom-0 left-0 right-0 p-4 bg-card-light dark:bg-card-dark border-t border-slate-200 dark:border-slate-800 z-50 safe-area-bottom shadow-[0_-5px_15px_rgba(0,0,0,0.1)]">
+            <div class="flex gap-3 max-w-md mx-auto">
+                <button
+                    class="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-semibold transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-[20px]">notifications_active</span>
+                    <span>Cảnh báo</span>
+                </button>
+                <button
+                    class="flex-[2] flex items-center justify-center gap-2 h-12 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95">
+                    <span>Mở Giao Dịch Ngay</span>
+                    <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
