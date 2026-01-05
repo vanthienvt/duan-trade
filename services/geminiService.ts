@@ -1,7 +1,11 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+if (!apiKey) {
+  console.warn("⚠️ Gemini API Key is missing! AI features will not work.");
+}
+const ai = new GoogleGenAI({ apiKey });
 
 export interface AIAnalysisResult {
   action: "LONG" | "SHORT" | "SIT OUT";
