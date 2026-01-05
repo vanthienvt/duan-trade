@@ -7,7 +7,7 @@ import TradeJournal from './pages/TradeJournal';
 import AnalysisDetails from './pages/AnalysisDetails';
 
 import TradeSetup from './pages/TradeSetup';
-import RiskCalculator from './pages/RiskCalculator';
+
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -31,8 +31,6 @@ const App: React.FC = () => {
         return <AnalysisDetails signal={selectedSignal} onNavigate={navigateTo} />;
       case 'setup':
         return <TradeSetup signal={selectedSignal} onNavigate={navigateTo} />;
-      case 'risk':
-        return <RiskCalculator onNavigate={navigateTo} />;
       default:
         return <Dashboard onNavigate={navigateTo} />;
     }
@@ -64,14 +62,6 @@ const App: React.FC = () => {
           </button>
 
           <button
-            onClick={() => navigateTo('risk')}
-            className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${currentView === 'risk' ? 'text-primary' : 'text-text-secondary'}`}
-          >
-            <span className={`material-symbols-outlined ${currentView === 'risk' ? 'fill-1' : ''}`}>calculate</span>
-            <span className="text-[10px] font-medium">QL Vốn</span>
-          </button>
-
-          <button
             onClick={() => navigateTo('journal')}
             className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${currentView === 'journal' ? 'text-primary' : 'text-text-secondary'}`}
           >
@@ -80,13 +70,6 @@ const App: React.FC = () => {
               <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border border-background"></div>
             </div>
             <span className="text-[10px] font-medium">Nhật ký</span>
-          </button>
-
-          <button
-            className="flex flex-1 flex-col items-center justify-center gap-1 text-text-secondary"
-          >
-            <span className="material-symbols-outlined">person</span>
-            <span className="text-[10px] font-medium">Cá nhân</span>
           </button>
         </div>
       </nav>

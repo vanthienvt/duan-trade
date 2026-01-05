@@ -30,4 +30,4 @@ export interface TradeAlert {
   icon: string;
 }
 
-export type View = 'dashboard' | 'signals' | 'journal' | 'details' | 'setup' | 'risk';
+export type View = 'dashboard' | 'signals' | 'journal' | 'details' | 'setup';
