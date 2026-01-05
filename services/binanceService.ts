@@ -273,7 +273,7 @@ const calculateConfidence = (indicators: TechnicalIndicators, change24h: number,
     if (rsi > 45 && rsi < 55) confidence += 10;
   }
 
-  return Math.round(Math.min(95, Math.max(50, confidence)));
+  return Math.round(Math.min(99, Math.max(50, confidence)));
 };
 
 const generateSummary = (signalType: SignalType, indicators: TechnicalIndicators, change24h: number): string => {

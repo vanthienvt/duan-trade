@@ -15,7 +15,12 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
   const [btcTrend, setBtcTrend] = useState<'UP' | 'DOWN' | 'NEUTRAL'>('NEUTRAL');
   const [activeFilter, setActiveFilter] = useState('Tất cả');
   const [showSettings, setShowSettings] = useState(false);
-  const [sentAlerts] = useState(new Set<string>()); // Session based spam prevention
+
+  // Load sent alerts from session storage to prevent spam on reload
+  const [sentAlerts] = useState(() => {
+    const saved = sessionStorage.getItem('sent_alerts');
+    return new Set<string>(saved ? JSON.parse(saved) : []);
+  });
 
   useEffect(() => {
     const fetchData = async () => {
