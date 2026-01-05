@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, MarketSignal, SignalType } from '../types';
 import { getSignals } from '../services/apiService';
 import { getBTCContext, scanTopMarketCoins } from '../services/binanceService';
+import SettingsModal from '../components/SettingsModal';
+import { sendTelegramAlert } from '../services/telegramService';
 
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
@@ -12,6 +14,8 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [btcTrend, setBtcTrend] = useState<'UP' | 'DOWN' | 'NEUTRAL'>('NEUTRAL');
   const [activeFilter, setActiveFilter] = useState('Tất cả');
+  const [showSettings, setShowSettings] = useState(false);
+  const [sentAlerts] = useState(new Set<string>()); // Session based spam prevention
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,6 +29,26 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
         getSignals(topCoins),
         getBTCContext()
       ]);
+
+      // TELEGRAM ALERT LOGIC
+      data.forEach(signal => {
+        // Condition: Strong Confidence (>75%) AND Strong Trend (Long/Short) AND Not Sent Yet
+        if (signal.confidence >= 75 && signal.type !== SignalType.NEUTRAL) {
+          const alertKey = `${signal.pair}-${signal.type}-${signal.timeframe}`;
+          if (!sentAlerts.has(alertKey)) {
+            const icon = signal.type === SignalType.LONG ? '🟢' : '🔴';
+            const msg = `${icon} *TÍN HIỆU HOT: ${signal.pair}*\n\n` +
+              `• Xu hướng: *${signal.type}*\n` +
+              `• Giá: $${signal.price.toLocaleString()}\n` +
+              `• Uy tín: ${signal.confidence}%\n` +
+              `• Lý do: ${signal.summary}\n\n` +
+              `👉 Vào App xem chi tiết!`;
+
+            sendTelegramAlert(msg);
+            sentAlerts.add(alertKey);
+          }
+        }
+      });
 
       setBtcTrend(btcContext ? btcContext.trend_4h as 'UP' | 'DOWN' : 'NEUTRAL');
 
@@ -89,10 +113,15 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
           <h1 className="text-xl font-extrabold">Tín Hiệu AI</h1>
           <p className="text-xs text-text-secondary font-medium">Bản đồ BTC: <span className={btcTrend === 'UP' ? 'text-bullish' : 'text-bearish'}>{btcTrend}</span></p>
         </div>
-        <button className="h-10 w-10 flex items-center justify-center rounded-full bg-surface">
+        <button
+          onClick={() => setShowSettings(true)}
+          className="h-10 w-10 flex items-center justify-center rounded-full bg-surface"
+        >
           <span className="material-symbols-outlined">tune</span>
         </button>
-      </header>
+      </header >
+
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Filter Chips */}
       <div className="flex gap-2 overflow-x-auto px-4 py-3 no-scrollbar">
