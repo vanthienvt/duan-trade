@@ -7,6 +7,70 @@ interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
 }
 
+const RiskCalc: React.FC<{ signal: MarketSignal }> = ({ signal }) => {
+  const [balance, setBalance] = React.useState<string>(() => localStorage.getItem('user_balance') || '1000');
+  const [riskPercent, setRiskPercent] = React.useState<number>(1);
+
+  const entryPrice = signal.price;
+  const stopLossPrice = signal.price * 0.95; // 5% SL from logic
+  const slDistancePercent = Math.abs((entryPrice - stopLossPrice) / entryPrice);
+
+  const riskAmount = (parseFloat(balance) || 0) * (riskPercent / 100);
+  const positionSizeUSDT = slDistancePercent > 0 ? riskAmount / slDistancePercent : 0;
+  // If leverage needed, we can imply it, but for spot/perp simple calc:
+  // Position Size (Coins) = riskAmount / |Entry - SL|
+  const positionSizeCoins = Math.abs(entryPrice - stopLossPrice) > 0
+    ? riskAmount / Math.abs(entryPrice - stopLossPrice)
+    : 0;
+
+  React.useEffect(() => {
+    localStorage.setItem('user_balance', balance);
+  }, [balance]);
+
+  return (
+    <div className="mx-4 mb-2 p-5 bg-surface border border-white/10 rounded-2xl shadow-lg">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-primary">calculate</span>
+        <h3 className="font-black text-sm uppercase tracking-wider">Máy Tính Đi Lệnh</h3>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="text-[10px] uppercase font-bold text-text-secondary">Vốn của bạn ($)</label>
+          <input
+            type="number"
+            value={balance}
+            onChange={(e) => setBalance(e.target.value)}
+            className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-sm font-bold mt-1 focus:border-primary outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] uppercase font-bold text-text-secondary">Rủi ro (%)</label>
+          <div className="flex items-center gap-2 mt-1">
+            <button onClick={() => setRiskPercent(1)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold border ${riskPercent === 1 ? 'bg-primary text-white border-primary' : 'border-white/10 text-text-secondary'}`}>1%</button>
+            <button onClick={() => setRiskPercent(2)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold border ${riskPercent === 2 ? 'bg-primary text-white border-primary' : 'border-white/10 text-text-secondary'}`}>2%</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-background/50 rounded-xl p-3 border border-white/5 space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-text-secondary font-medium">Chấp nhận lỗ (R):</span>
+          <span className="text-sm font-black text-bearish">-${riskAmount.toFixed(1)}</span>
+        </div>
+        <div className="h-px bg-white/5"></div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-text-secondary font-medium uppercase">Volume Cần Vào:</span>
+          <span className="text-lg font-black text-primary">${positionSizeUSDT.toFixed(0)}</span>
+        </div>
+        <p className="text-[10px] text-right text-text-secondary opacity-70">
+          ( ~ {positionSizeCoins.toFixed(4)} {signal.pair.split('/')[0]} )
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
   if (!signal) return null;
 
@@ -37,6 +101,9 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
           <p className="text-bullish text-xs font-black uppercase tracking-widest">+{signal.change24h}% (24h)</p>
         </div>
       </div>
+
+      {/* Risk Calculator Logic */}
+      <RiskCalc signal={signal} />
 
       <div className="px-4 space-y-6">
         <div className="bg-surface rounded-2xl p-5 border border-white/5 shadow-2xl">
