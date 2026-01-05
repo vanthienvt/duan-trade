@@ -51,6 +51,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
 
             sendTelegramAlert(msg);
             sentAlerts.add(alertKey);
+            sessionStorage.setItem('sent_alerts', JSON.stringify(Array.from(sentAlerts)));
           }
         }
       });
