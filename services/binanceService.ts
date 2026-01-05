@@ -392,6 +392,35 @@ const getFundingRate = async (symbol: string): Promise<string> => {
   }
 };
 
+
+// New Function: Scan Top 15 Coins by Volume
+const scanTopMarketCoins = async (): Promise<string[]> => {
+  try {
+    const response = await fetch(`${BINANCE_API_BASE}/ticker/24hr`);
+    const data = await response.json();
+
+    // Filter USDT pairs, exclude stablecoins/leverage tokens
+    const validPairs = data.filter((t: any) =>
+      t.symbol.endsWith('USDT') &&
+      !t.symbol.includes('UP') &&
+      !t.symbol.includes('DOWN') &&
+      !['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT'].includes(t.symbol)
+    );
+
+    // Sort by Quote Volume (Liquidity) -> Top 15
+    const topCoins = validPairs
+      .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
+      .slice(0, 15)
+      .map((t: any) => t.symbol);
+
+    return topCoins;
+  } catch (error) {
+    console.error('Scanner Error:', error);
+    // Fallback if API fails
+    return ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT'];
+  }
+};
+
 export {
   getTickerData,
   getKlineData,
@@ -400,6 +429,7 @@ export {
   generateSignals,
   getBTCContext,
   getOpenInterest,
-  getFundingRate
+  getFundingRate,
+  scanTopMarketCoins
 };
 

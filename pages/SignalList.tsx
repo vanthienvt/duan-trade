@@ -1,8 +1,8 @@
-
+```
 import React, { useState, useEffect } from 'react';
 import { View, MarketSignal, SignalType } from '../types';
 import { getSignals } from '../services/apiService';
-import { getBTCContext } from '../services/binanceService';
+import { getBTCContext, scanTopMarketCoins } from '../services/binanceService';
 
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
@@ -16,8 +16,13 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+
+      // 1. Scan Market for Top Coins
+      const topCoins = await scanTopMarketCoins();
+
+      // 2. Fetch Signals & Context
       const [data, btcContext] = await Promise.all([
-        getSignals(['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'RENDERUSDT', 'DOGEUSDT']),
+        getSignals(topCoins),
         getBTCContext()
       ]);
 
@@ -28,15 +33,40 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
       // If BTC Context is not null, we can strictly filter or just sort.
       // For strict 10-part system: "If trend... don't align? No trade."
 
-      if (btcContext) {
-        // Filter out signals that oppose the trend
-        const trendDirection = btcContext.trend_4h === 'UP' ? SignalType.LONG : SignalType.SHORT;
-        const filteredData = data.filter(s => s.type === trendDirection || s.type === SignalType.NEUTRAL);
-        setSignals(filteredData);
-      } else {
-        setSignals(data);
-      }
 
+      // Global Sort: ALWAYS sort by Strength (Buy > Sell > Neutral) & Confidence
+      // We process the list regardless of BTC context to ensure sorting is consistent
+
+      const listToSort = btcContext ?
+        // If BTC Filter active: Hide opposing signals? Or just de-prioritize?
+        // User asked for "Strong Buy on Top". Strict filter might hide them if BTC is down.
+        // Let's keep the filter but SORT what remains.
+        data.filter(s => {
+          const trend = btcContext.trend_4h === 'UP' ? SignalType.LONG : SignalType.SHORT;
+          return s.type === trend || s.type === SignalType.NEUTRAL;
+        })
+        : data;
+
+      listToSort.sort((a, b) => {
+        // Priority Map: LONG (3) > SHORT (2) > NEUTRAL (1)
+        const getPriority = (type: SignalType) => {
+          if (type === SignalType.LONG) return 3;
+          if (type === SignalType.SHORT) return 2;
+          return 1;
+        };
+
+        const priorityA = getPriority(a.type);
+        const priorityB = getPriority(b.type);
+
+        if (priorityA !== priorityB) {
+          return priorityB - priorityA; // High priority first
+        }
+
+        // Secondary Sort: Confidence
+        return b.confidence - a.confidence;
+      });
+
+      setSignals(listToSort);
       setLoading(false);
     };
     fetchData();
@@ -69,7 +99,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
         {['Tất cả', 'Long (Mua)', 'Short (Bán)', 'Uy tín cao'].map((chip, i) => (
           <button
             key={i}
-            className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition-all ${i === 0 ? 'bg-white text-background shadow-lg' : 'bg-surface text-text-secondary border border-white/5'}`}
+            className={`whitespace - nowrap rounded - full px - 4 py - 2 text - xs font - bold transition - all ${ i === 0 ? 'bg-white text-background shadow-lg' : 'bg-surface text-text-secondary border border-white/5' } `}
           >
             {chip}
           </button>
@@ -106,7 +136,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${signal.type === SignalType.LONG ? 'bg-bullish/10 text-bullish' : 'bg-bearish/10 text-bearish'}`}>
+                  <span className={`inline - flex items - center gap - 1 rounded - md px - 2.5 py - 1 text - [11px] font - black uppercase tracking - wider ${ signal.type === SignalType.LONG ? 'bg-bullish/10 text-bullish' : 'bg-bearish/10 text-bearish' } `}>
                     <span className="material-symbols-outlined text-[14px]">
                       {signal.type === SignalType.LONG ? 'arrow_upward' : 'arrow_downward'}
                     </span>
