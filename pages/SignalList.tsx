@@ -1,4 +1,3 @@
-```
 import React, { useState, useEffect } from 'react';
 import { View, MarketSignal, SignalType } from '../types';
 import { getSignals } from '../services/apiService';
@@ -99,7 +98,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
         {['Tất cả', 'Long (Mua)', 'Short (Bán)', 'Uy tín cao'].map((chip, i) => (
           <button
             key={i}
-            className={`whitespace - nowrap rounded - full px - 4 py - 2 text - xs font - bold transition - all ${ i === 0 ? 'bg-white text-background shadow-lg' : 'bg-surface text-text-secondary border border-white/5' } `}
+            className={`whitespace - nowrap rounded - full px - 4 py - 2 text - xs font - bold transition - all ${i === 0 ? 'bg-white text-background shadow-lg' : 'bg-surface text-text-secondary border border-white/5'} `}
           >
             {chip}
           </button>
@@ -136,7 +135,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className={`inline - flex items - center gap - 1 rounded - md px - 2.5 py - 1 text - [11px] font - black uppercase tracking - wider ${ signal.type === SignalType.LONG ? 'bg-bullish/10 text-bullish' : 'bg-bearish/10 text-bearish' } `}>
+                  <span className={`inline - flex items - center gap - 1 rounded - md px - 2.5 py - 1 text - [11px] font - black uppercase tracking - wider ${signal.type === SignalType.LONG ? 'bg-bullish/10 text-bullish' : 'bg-bearish/10 text-bearish'} `}>
                     <span className="material-symbols-outlined text-[14px]">
                       {signal.type === SignalType.LONG ? 'arrow_upward' : 'arrow_downward'}
                     </span>
