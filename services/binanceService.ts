@@ -1,6 +1,7 @@
 import { MarketSignal, SignalType } from '../types';
 
 const BINANCE_API_BASE = 'https://api.binance.com/api/v3';
+const BINANCE_FAPI_BASE = 'https://fapi.binance.com/fapi/v1';
 
 interface TickerData {
   symbol: string;
@@ -361,12 +362,39 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
   }
 };
 
+
+const getOpenInterest = async (symbol: string): Promise<string> => {
+  try {
+    const formattedSymbol = symbol.toUpperCase().replace('/', '');
+    const response = await fetch(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formattedSymbol}`);
+    const data = await response.json();
+    return (parseFloat(data.openInterest)).toLocaleString();
+  } catch (error) {
+    console.error('Error OI:', error);
+    return 'N/A';
+  }
+};
+
+const getFundingRate = async (symbol: string): Promise<string> => {
+  try {
+    const formattedSymbol = symbol.toUpperCase().replace('/', '');
+    const response = await fetch(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formattedSymbol}`);
+    const data = await response.json();
+    return (parseFloat(data.lastFundingRate) * 100).toFixed(4) + '%';
+  } catch (error) {
+    console.error('Error Funding:', error);
+    return '0.0100%';
+  }
+};
+
 export {
   getTickerData,
   getKlineData,
   getMarketData,
   calculateTechnicalIndicators,
   generateSignals,
-  getBTCContext
+  getBTCContext,
+  getOpenInterest,
+  getFundingRate
 };
 

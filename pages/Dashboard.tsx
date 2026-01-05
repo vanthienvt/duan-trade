@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, SignalType, MarketSignal } from '../types';
 import { getDashboardSignal, getRecentAlerts, getFearAndGreedIndex } from '../services/apiService';
 import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
-import { getBTCContext } from '../services/binanceService';
+import { getBTCContext, getOpenInterest, getFundingRate } from '../services/binanceService';
 
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
@@ -30,6 +30,8 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
   const [hasError, setHasError] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [funding, setFunding] = useState<string>('...');
+  const [oi, setOi] = useState<string>('...');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,10 +49,15 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
           setIsAnalyzing(true);
 
           // Fetch Context in parallel
-          const [btcContext, sentiment] = await Promise.all([
+          const [btcContext, sentiment, fundingRate, openInterest] = await Promise.all([
             getBTCContext(),
-            getFearAndGreedIndex()
+            getFearAndGreedIndex(),
+            getFundingRate(data.pair),
+            getOpenInterest(data.pair)
           ]);
+
+          setFunding(fundingRate);
+          setOi(openInterest);
 
           // Trigger AI with Context
           getMarketAnalysis(data.pair, {
@@ -183,13 +190,13 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
       <div className="px-4 mb-6">
         {aiAnalysis ? (
           <div className={`relative overflow-hidden rounded-2xl p-6 text-center border ${aiAnalysis.action === 'LONG' ? 'bg-green-500/10 border-green-500/20' :
-              aiAnalysis.action === 'SHORT' ? 'bg-red-500/10 border-red-500/20' :
-                'bg-slate-500/10 border-white/5'
+            aiAnalysis.action === 'SHORT' ? 'bg-red-500/10 border-red-500/20' :
+              'bg-slate-500/10 border-white/5'
             }`}>
             <p className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-2">Chiến lược hôm nay</p>
             <h2 className={`text-4xl font-black tracking-tighter ${aiAnalysis.action === 'LONG' ? 'text-bullish' :
-                aiAnalysis.action === 'SHORT' ? 'text-bearish' :
-                  'text-gray-400'
+              aiAnalysis.action === 'SHORT' ? 'text-bearish' :
+                'text-gray-400'
               }`}>
               {aiAnalysis.action === 'SIT OUT' ? 'SIT OUT (NGHỈ)' : aiAnalysis.action}
             </h2>
@@ -237,6 +244,18 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
               val: isAnalyzing ? '...' : aiAnalysis?.entryZone || 'Chờ tín hiệu',
               icon: 'ads_click',
               color: 'text-purple-400'
+            },
+            {
+              label: 'Funding Rate',
+              val: funding,
+              icon: 'currency_exchange',
+              color: funding.startsWith('-') ? 'text-bullish' : 'text-text-secondary'
+            },
+            {
+              label: 'Open Interest',
+              val: oi,
+              icon: 'stacked_line_chart',
+              color: 'text-blue-400'
             }
           ].map((item, i) => (
             <div key={i} className="bg-surface border border-white/5 rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden group">
