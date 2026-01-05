@@ -100,9 +100,9 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="text-base font-bold">{signal.pair}</h4>
-                      <span className="rounded bg-background px-1.5 py-0.5 text-[10px] font-extrabold text-text-secondary border border-white/5">{signal.timeframe}</span>
+                      <span className="rounded bg-background px-1.5 py-0.5 text-[10px] font-extrabold text-text-secondary border border-white/5" title="Khung thời gian phân tích">Khung {signal.timeframe}</span>
                     </div>
-                    <p className="text-xs font-medium text-text-secondary mt-0.5 tracking-tight">Entry: ${signal.price.toLocaleString()}</p>
+                    <p className="text-xs font-medium text-text-secondary mt-0.5 tracking-tight">Giá: ${signal.price.toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
@@ -124,7 +124,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
           ))
         )}
       </div>
-    </div>
+    </div >
   );
 };
 
