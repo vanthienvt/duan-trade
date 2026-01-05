@@ -114,7 +114,7 @@ export const getMarketAnalysis = async (pair: string, context?: GlobalMarketCont
     return {
       action: "SIT OUT",
       confidence: 0,
-      summary: "Hệ thống AI đang bảo trì hoặc quá tải. Tạm thời đứng ngoài thị trường.",
+      summary: `Hệ thống gặp lỗi kết nối AI: ${(error as any)?.message || 'Unknown error'}. Vui lòng kiểm tra API Key.`,
       trendStatus: "Unknown",
       liquidity: "Unknown",
       sentiment: "Neutral",
