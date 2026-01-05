@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto AI Analysis Pro</title>
+    <script>
+        // Single Page Apps for GitHub Pages
+        // Redirect to index.html with query parameter
+        var pathSegmentsToKeep = 1;
+        var l = window.location;
+        var repoName = l.pathname.split('/')[1];
+        var basePath = repoName ? '/' + repoName + '/' : '/';
+        
+        var redirectPath = basePath + '?/' + 
+            l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+            (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+            l.hash;
+        
+        l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + redirectPath);
+    </script>
+</head>
+<body>
+    <div>Redirecting...</div>
+</body>
+</html>
+

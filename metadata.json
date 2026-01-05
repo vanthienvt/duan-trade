@@ -1,0 +1,7 @@
+{
+  "name": "Crypto AI Analysis Pro",
+  "description": "A world-class cryptocurrency market analysis and trading signal platform powered by Gemini AI. Features include market signals, technical deep-dives, trade setups, and a trading journal.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
