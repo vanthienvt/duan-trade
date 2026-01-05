@@ -50,13 +50,13 @@ const getTickerData = async (symbol: string): Promise<TickerData> => {
   try {
     const formattedSymbol = formatSymbol(symbol);
     const response = await fetch(`${BINANCE_API_BASE}/ticker/24hr?symbol=${formattedSymbol}`);
-    
+
     if (!response.ok) {
       throw new Error(`Binance API error: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
-    
+
     return {
       symbol: data.symbol,
       price: parseFloat(data.lastPrice),
@@ -79,13 +79,13 @@ const getKlineData = async (symbol: string, interval: string = '1h', limit: numb
     const response = await fetch(
       `${BINANCE_API_BASE}/klines?symbol=${formattedSymbol}&interval=${interval}&limit=${limit}`
     );
-    
+
     if (!response.ok) {
       throw new Error(`Binance API error: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
-    
+
     return data.map((kline: any[]) => ({
       openTime: kline[0],
       open: parseFloat(kline[1]),
@@ -105,21 +105,21 @@ const getKlineData = async (symbol: string, interval: string = '1h', limit: numb
 
 const calculateRSI = (prices: number[], period: number = 14): number => {
   if (prices.length < period + 1) return 50;
-  
+
   let gains = 0;
   let losses = 0;
-  
+
   for (let i = prices.length - period; i < prices.length; i++) {
     const change = prices[i] - prices[i - 1];
     if (change > 0) gains += change;
     else losses += Math.abs(change);
   }
-  
+
   const avgGain = gains / period;
   const avgLoss = losses / period;
-  
+
   if (avgLoss === 0) return 100;
-  
+
   const rs = avgGain / avgLoss;
   return 100 - (100 / (1 + rs));
 };
@@ -130,22 +130,38 @@ const calculateMA = (prices: number[], period: number): number => {
   return slice.reduce((sum, price) => sum + price, 0) / period;
 };
 
+const calculateEMA = (prices: number[], period: number): number => {
+  if (prices.length < period) return prices[prices.length - 1];
+  const k = 2 / (period + 1);
+  let ema = prices[0];
+  for (let i = 1; i < prices.length; i++) {
+    ema = prices[i] * k + ema * (1 - k);
+  }
+  // Better precision with slice for recent part if needed, but standard EMA is recursive.
+  // For simplicity on small arrays:
+  let trendEMA = prices.slice(0, period).reduce((a, b) => a + b, 0) / period; // Start with SMA
+  for (let i = period; i < prices.length; i++) {
+    trendEMA = (prices[i] - trendEMA) * k + trendEMA;
+  }
+  return trendEMA;
+};
+
 const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIndicators> => {
   try {
     const klines1h = await getKlineData(symbol, '1h', 50);
     const klines4h = await getKlineData(symbol, '4h', 50);
     const closes1h = klines1h.map(k => k.close);
     const closes4h = klines4h.map(k => k.close);
-    
+
     const rsi14 = calculateRSI(closes1h, 14);
     const ma20 = calculateMA(closes1h, 20);
     const ma50 = calculateMA(closes4h, 50);
     const currentPrice = closes1h[closes1h.length - 1];
-    
+
     const volume = klines1h[klines1h.length - 1].volume;
     const avgVolume = klines1h.slice(-20).reduce((sum, k) => sum + k.volume, 0) / 20;
     const volumeRatio = volume / avgVolume;
-    
+
     return {
       rsi: Math.round(rsi14),
       ma20,
@@ -173,7 +189,7 @@ const getMarketData = async (symbol: string): Promise<MarketData> => {
   try {
     const ticker = await getTickerData(symbol);
     const indicators = await calculateTechnicalIndicators(symbol);
-    
+
     return {
       ...ticker,
       ...indicators,
@@ -182,6 +198,35 @@ const getMarketData = async (symbol: string): Promise<MarketData> => {
   } catch (error) {
     console.error(`Error fetching market data for ${symbol}:`, error);
     throw error;
+  }
+}
+const getBTCContext = async () => {
+  try {
+    const klines4h = await getKlineData('BTCUSDT', '4h', 200);
+    const klines1d = await getKlineData('BTCUSDT', '1d', 50);
+
+    const closes4h = klines4h.map(k => k.close);
+    const closes1d = klines1d.map(k => k.close);
+    const currentPrice = closes4h[closes4h.length - 1];
+
+    const ema20_4h = calculateEMA(closes4h, 20);
+    const ema50_4h = calculateEMA(closes4h, 50);
+    const ema200_4h = calculateEMA(closes4h, 200);
+
+    const trend = {
+      price: currentPrice,
+      ema20_4h,
+      ema50_4h,
+      ema200_4h,
+      rsi_4h: calculateRSI(closes4h, 14),
+      trend_4h: currentPrice > ema200_4h ? 'UP' : 'DOWN',
+      momentum: currentPrice > ema20_4h ? 'STRONG' : 'WEAK'
+    };
+
+    return trend;
+  } catch (error) {
+    console.error('Error fetching BTC context:', error);
+    return null;
   }
 };
 
@@ -192,21 +237,21 @@ const formatPairName = (symbol: string): string => {
 
 const determineSignalType = (indicators: TechnicalIndicators, change24h: number): SignalType => {
   const { rsi, currentPrice, ma20, volumeRatio } = indicators;
-  
-  const isBullish = 
-    rsi < 70 && 
-    rsi > 30 && 
-    currentPrice > ma20 && 
+
+  const isBullish =
+    rsi < 70 &&
+    rsi > 30 &&
+    currentPrice > ma20 &&
     change24h > 0 &&
     volumeRatio > 1.2;
-    
-  const isBearish = 
-    rsi > 30 && 
-    rsi < 70 && 
-    currentPrice < ma20 && 
+
+  const isBearish =
+    rsi > 30 &&
+    rsi < 70 &&
+    currentPrice < ma20 &&
     change24h < 0 &&
     volumeRatio > 1.2;
-  
+
   if (isBullish) return SignalType.LONG;
   if (isBearish) return SignalType.SHORT;
   return SignalType.NEUTRAL;
@@ -214,9 +259,9 @@ const determineSignalType = (indicators: TechnicalIndicators, change24h: number)
 
 const calculateConfidence = (indicators: TechnicalIndicators, change24h: number, signalType: SignalType): number => {
   const { rsi, volumeRatio, currentPrice, ma20 } = indicators;
-  
+
   let confidence = 50;
-  
+
   if (signalType === SignalType.LONG) {
     if (rsi > 40 && rsi < 65) confidence += 15;
     if (currentPrice > ma20) confidence += 10;
@@ -230,13 +275,13 @@ const calculateConfidence = (indicators: TechnicalIndicators, change24h: number,
     if (change24h < -2) confidence += 8;
     if (change24h < -5) confidence += 5;
   }
-  
+
   return Math.min(95, Math.max(60, confidence));
 };
 
 const generateSummary = (signalType: SignalType, indicators: TechnicalIndicators, change24h: number): string => {
   const { rsi, volumeRatio } = indicators;
-  
+
   if (signalType === SignalType.LONG) {
     if (volumeRatio > 1.5 && change24h > 3) {
       return 'Volume đột biến, phá vỡ cản trên. Lực mua mạnh.';
@@ -254,7 +299,7 @@ const generateSummary = (signalType: SignalType, indicators: TechnicalIndicators
     }
     return 'Xu hướng giảm với volume tăng.';
   }
-  
+
   return 'Thị trường đang trong trạng thái trung tính. Nên chờ tín hiệu rõ ràng hơn.';
 };
 
@@ -280,12 +325,12 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
         try {
           const marketData = await getMarketData(symbol);
           const pair = formatPairName(symbol);
-          
+
           const signalType = determineSignalType(marketData, marketData.change24h);
           const confidence = calculateConfidence(marketData, marketData.change24h, signalType);
           const summary = generateSummary(signalType, marketData, marketData.change24h);
           const timeframe = getTimeframe(marketData.volumeRatio);
-          
+
           return {
             id: symbol.toLowerCase(),
             pair,
@@ -308,7 +353,7 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
         }
       })
     );
-    
+
     return signals.filter((signal): signal is MarketSignal => signal !== null);
   } catch (error) {
     console.error('Error generating signals:', error);
@@ -316,11 +361,12 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
   }
 };
 
-export { 
-  getTickerData, 
-  getKlineData, 
-  getMarketData, 
+export {
+  getTickerData,
+  getKlineData,
+  getMarketData,
   calculateTechnicalIndicators,
-  generateSignals
+  generateSignals,
+  getBTCContext
 };
 

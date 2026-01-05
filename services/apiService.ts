@@ -86,3 +86,17 @@ export const getRecentAlerts = async (): Promise<any[]> => {
     return [];
   }
 };
+
+export const getFearAndGreedIndex = async () => {
+  try {
+    const response = await fetch('https://api.alternative.me/fng/');
+    const data = await response.json();
+    return {
+      value: parseInt(data.data[0].value),
+      classification: data.data[0].value_classification
+    };
+  } catch (error) {
+    console.error('Error fetching Fear & Greed:', error);
+    return { value: 50, classification: 'Neutral' };
+  }
+};

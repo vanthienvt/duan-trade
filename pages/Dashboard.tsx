@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, SignalType, MarketSignal } from '../types';
-import { getDashboardSignal, getRecentAlerts } from '../services/apiService';
+import { getDashboardSignal, getRecentAlerts, getFearAndGreedIndex } from '../services/apiService';
 import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
+import { getBTCContext } from '../services/binanceService';
 
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
@@ -41,10 +42,21 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
         setSignal(data);
         setHasError(false);
 
-        // Trigger AI Analysis automatically when data is loaded
+        // 10-Part System: Fetch Global Context First
         if (data.id !== 'fallback') {
           setIsAnalyzing(true);
-          getMarketAnalysis(data.pair).then(result => {
+
+          // Fetch Context in parallel
+          const [btcContext, sentiment] = await Promise.all([
+            getBTCContext(),
+            getFearAndGreedIndex()
+          ]);
+
+          // Trigger AI with Context
+          getMarketAnalysis(data.pair, {
+            btcTrend: btcContext,
+            fearAndGreed: sentiment
+          }).then(result => {
             setAiAnalysis(result);
             setIsAnalyzing(false);
           });
@@ -167,47 +179,63 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Analysis Grid */}
-      <div className="px-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider mb-4">Chi Tiết Phân Tích (AI Gemini)</h2>
-
-        {/* AI Summary Section */}
-        {aiAnalysis && (
-          <div className="mb-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-indigo-400 mt-1">psychology</span>
-              <div>
-                <h3 className="text-indigo-300 text-xs font-bold uppercase tracking-wider mb-1">Góc nhìn chuyên gia</h3>
-                <p className="text-sm text-gray-200 leading-relaxed">{aiAnalysis.summary}</p>
-              </div>
+      {/* 10-PART SYSTEM: MARKET BIAS (ACTION) */}
+      <div className="px-4 mb-6">
+        {aiAnalysis ? (
+          <div className={`relative overflow-hidden rounded-2xl p-6 text-center border ${aiAnalysis.action === 'LONG' ? 'bg-green-500/10 border-green-500/20' :
+              aiAnalysis.action === 'SHORT' ? 'bg-red-500/10 border-red-500/20' :
+                'bg-slate-500/10 border-white/5'
+            }`}>
+            <p className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-2">Chiến lược hôm nay</p>
+            <h2 className={`text-4xl font-black tracking-tighter ${aiAnalysis.action === 'LONG' ? 'text-bullish' :
+                aiAnalysis.action === 'SHORT' ? 'text-bearish' :
+                  'text-gray-400'
+              }`}>
+              {aiAnalysis.action === 'SIT OUT' ? 'SIT OUT (NGHỈ)' : aiAnalysis.action}
+            </h2>
+            <p className="text-xs mt-2 font-medium opacity-80">{aiAnalysis.summary}</p>
+            <div className="mt-4 flex justify-center gap-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+              <span>Độ tin cậy: {aiAnalysis.confidence}%</span>
+              <span>•</span>
+              <span>Rủi ro: {aiAnalysis.riskLevel}</span>
             </div>
           </div>
+        ) : (
+          <div className="rounded-2xl bg-surface p-6 text-center border border-white/5">
+            <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-xs text-text-secondary">AI đang phân tích dữ liệu toàn thị trường...</p>
+          </div>
         )}
+      </div>
+
+      {/* Analysis Grid */}
+      <div className="px-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider mb-4">Chỉ số chi tiết</h2>
 
         <div className="grid grid-cols-2 gap-3 mb-10">
           {[
             {
-              label: 'Xu Hướng',
-              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.trendStatus || 'Chờ dữ liệu',
+              label: 'Xu Hướng BTC',
+              val: isAnalyzing ? '...' : aiAnalysis?.trendStatus || 'N/A',
               icon: 'trending_up',
               color: 'text-primary'
             },
             {
               label: 'Thanh Khoản',
-              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.liquidityStatus || 'Chờ dữ liệu',
+              val: isAnalyzing ? '...' : aiAnalysis?.liquidity || 'N/A',
               icon: 'ssid_chart',
               color: 'text-teal-400'
             },
             {
               label: 'Tâm Lý',
-              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.sentimentStatus || 'Chờ dữ liệu',
+              val: isAnalyzing ? '...' : aiAnalysis?.sentiment || 'N/A',
               icon: 'mood',
               color: 'text-orange-400'
             },
             {
-              label: 'Rủi Ro',
-              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.riskLevel || 'Chờ dữ liệu',
-              icon: 'shield',
+              label: 'Vùng Mua',
+              val: isAnalyzing ? '...' : aiAnalysis?.entryZone || 'Chờ tín hiệu',
+              icon: 'ads_click',
               color: 'text-purple-400'
             }
           ].map((item, i) => (
