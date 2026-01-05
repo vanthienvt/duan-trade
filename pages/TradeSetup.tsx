@@ -62,7 +62,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
         </div>
 
         <h3 className="font-black text-lg px-1 tracking-tighter">Thiết Lập Giao Dịch</h3>
-        
+
         <div className="space-y-4">
           <div className="relative overflow-hidden rounded-2xl border-l-4 border-l-primary bg-surface border-y border-r border-white/5 p-5 group">
             <span className="material-symbols-outlined absolute -top-4 -right-4 text-7xl opacity-5">my_location</span>
@@ -92,6 +92,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
           {[
             { label: 'TP 1 (Ngắn hạn)', target: (signal.price * 1.08).toFixed(2), p: '+8.0%', color: 'text-bullish', icon: '1' },
             { label: 'TP 2 (Swing)', target: (signal.price * 1.15).toFixed(2), p: '+15.2%', color: 'text-bullish', icon: '2' },
+            { label: 'TP 3 (Moonbag)', target: (signal.price * 1.30).toFixed(2), p: '+30.0%', color: 'text-bullish', icon: 'rocket_launch' },
             { label: 'Cắt Lỗ (Stop Loss)', target: (signal.price * 0.95).toFixed(2), p: '-5.0%', color: 'text-bearish', icon: 'shield' }
           ].map((item, i) => (
             <div key={i} className={`flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/5' : ''}`}>
@@ -114,7 +115,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
       </div>
 
       <footer className="fixed bottom-0 left-0 w-full p-4 bg-background/90 backdrop-blur-xl border-t border-white/5 z-50 safe-bottom">
-        <button 
+        <button
           onClick={() => onNavigate('dashboard')}
           className="w-full h-14 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all rounded-2xl text-white font-black text-sm flex items-center justify-center gap-2 shadow-2xl shadow-primary/40"
         >
