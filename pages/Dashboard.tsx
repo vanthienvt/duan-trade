@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, SignalType, MarketSignal } from '../types';
-import { getDashboardSignal } from '../services/apiService';
+import { getDashboardSignal, getRecentAlerts } from '../services/apiService';
 
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
@@ -23,6 +23,7 @@ const FALLBACK_SIGNAL: MarketSignal = {
 
 const Dashboard: React.FC<Props> = ({ onNavigate }) => {
   const [signal, setSignal] = useState<MarketSignal | null>(null);
+  const [alerts, setAlerts] = useState<any[]>([]); // New state for alerts
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -31,12 +32,18 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
       setLoading(true);
       setHasError(false);
       const data = await getDashboardSignal();
+      const alertsData = await getRecentAlerts(); // Fetch alerts
+
       if (data) {
         setSignal(data);
         setHasError(false);
       } else {
         setSignal(FALLBACK_SIGNAL);
         setHasError(true);
+      }
+
+      if (alertsData) {
+        setAlerts(alertsData);
       }
       setLoading(false);
     };
@@ -95,13 +102,13 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
         <div className="relative overflow-hidden rounded-2xl bg-surface p-8 flex flex-col items-center text-center shadow-2xl group cursor-pointer active:scale-[0.98] transition-transform">
           <div className="absolute inset-0 bg-gradient-to-br from-[#1a2c42] to-[#10151a]"></div>
           <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
-          
+
           <div className="relative z-10 w-full flex flex-col items-center">
             <p className="text-text-secondary text-xs font-bold uppercase tracking-[0.2em] mb-3">Tín Hiệu Thị Trường</p>
             <h1 className="text-6xl font-black tracking-tighter mb-4" style={{ color: signal.type === SignalType.LONG ? '#10b981' : signal.type === SignalType.SHORT ? '#ef4444' : '#9dabb9' }}>
               {signal.type}
             </h1>
-            
+
             <div className="w-full max-w-[240px]">
               <div className="flex justify-between text-[10px] text-text-secondary mb-1.5 font-semibold uppercase">
                 <span>Yếu</span>
@@ -109,13 +116,13 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
                 <span>Mạnh</span>
               </div>
               <div className="h-2 w-full bg-background rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-green-600 to-bullish shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-1000"
                   style={{ width: `${signal.confidence}%` }}
                 ></div>
               </div>
             </div>
-            
+
             <p className="text-[10px] text-text-secondary mt-6 italic opacity-60">AI phân tích dựa trên dữ liệu {signal.timeframe} timeframe</p>
           </div>
         </div>
@@ -128,11 +135,7 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
           <button className="text-primary text-xs font-bold" onClick={() => onNavigate('signals')}>Xem tất cả</button>
         </div>
         <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x">
-          {[
-            { pair: 'SOL', type: 'Entry Long', time: '5m', color: 'text-bullish', icon: 'S', bg: 'bg-indigo-500/10' },
-            { pair: 'BTC', type: 'Sit Out', time: '15m', color: 'text-text-secondary', icon: 'B', bg: 'bg-orange-500/10' },
-            { pair: 'ETH', type: 'Short Setup', time: '32m', color: 'text-bearish', icon: 'E', bg: 'bg-blue-500/10' }
-          ].map((alert, i) => (
+          {alerts.map((alert, i) => (
             <div key={i} className="snap-start flex-none w-[160px] bg-surface border border-white/5 rounded-xl p-3 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -178,7 +181,7 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
 
       {/* Sticky Bottom CTA */}
       <div className="sticky bottom-0 z-30 p-4 bg-background/80 backdrop-blur-xl border-t border-white/5 mt-4">
-        <button 
+        <button
           onClick={() => onNavigate('signals')}
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary h-14 text-sm font-bold shadow-xl shadow-primary/30 hover:bg-primary/90 active:scale-[0.98] transition-all"
         >

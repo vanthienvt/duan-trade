@@ -5,7 +5,9 @@ import Dashboard from './pages/Dashboard';
 import SignalList from './pages/SignalList';
 import TradeJournal from './pages/TradeJournal';
 import AnalysisDetails from './pages/AnalysisDetails';
+
 import TradeSetup from './pages/TradeSetup';
+import RiskCalculator from './pages/RiskCalculator';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -29,6 +31,8 @@ const App: React.FC = () => {
         return <AnalysisDetails signal={selectedSignal} onNavigate={navigateTo} />;
       case 'setup':
         return <TradeSetup signal={selectedSignal} onNavigate={navigateTo} />;
+      case 'risk':
+        return <RiskCalculator onNavigate={navigateTo} />;
       default:
         return <Dashboard onNavigate={navigateTo} />;
     }
@@ -43,23 +47,31 @@ const App: React.FC = () => {
       {/* Global Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-lg border-t border-white/5 max-w-md mx-auto safe-bottom">
         <div className="flex h-16 items-center justify-around px-2">
-          <button 
+          <button
             onClick={() => navigateTo('dashboard')}
             className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${currentView === 'dashboard' ? 'text-primary' : 'text-text-secondary'}`}
           >
             <span className={`material-symbols-outlined ${currentView === 'dashboard' ? 'fill-1' : ''}`}>home</span>
             <span className="text-[10px] font-medium">Trang chủ</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => navigateTo('signals')}
             className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${currentView === 'signals' ? 'text-primary' : 'text-text-secondary'}`}
           >
             <span className={`material-symbols-outlined ${currentView === 'signals' ? 'fill-1' : ''}`}>candlestick_chart</span>
             <span className="text-[10px] font-medium">Tín hiệu</span>
           </button>
-          
-          <button 
+
+          <button
+            onClick={() => navigateTo('risk')}
+            className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${currentView === 'risk' ? 'text-primary' : 'text-text-secondary'}`}
+          >
+            <span className={`material-symbols-outlined ${currentView === 'risk' ? 'fill-1' : ''}`}>calculate</span>
+            <span className="text-[10px] font-medium">QL Vốn</span>
+          </button>
+
+          <button
             onClick={() => navigateTo('journal')}
             className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${currentView === 'journal' ? 'text-primary' : 'text-text-secondary'}`}
           >
@@ -69,8 +81,8 @@ const App: React.FC = () => {
             </div>
             <span className="text-[10px] font-medium">Nhật ký</span>
           </button>
-          
-          <button 
+
+          <button
             className="flex flex-1 flex-col items-center justify-center gap-1 text-text-secondary"
           >
             <span className="material-symbols-outlined">person</span>
