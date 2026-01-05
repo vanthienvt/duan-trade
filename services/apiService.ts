@@ -1,5 +1,5 @@
 import { MarketSignal, SignalType } from '../types';
-import { generateSignals, getMarketData as getBinanceMarketData } from './binanceService';
+import { generateSignals, getMarketData as getBinanceMarketData, scanTopMarketCoins } from './binanceService';
 
 export const getDashboardSignal = async (): Promise<MarketSignal | null> => {
   try {
@@ -13,10 +13,22 @@ export const getDashboardSignal = async (): Promise<MarketSignal | null> => {
 
 export const getSignals = async (symbols?: string[]): Promise<MarketSignal[]> => {
   try {
-    const defaultSymbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'RENDERUSDT'];
-    const symbolsToFetch = symbols || defaultSymbols;
+    let symbolsToFetch = symbols;
+
+    // If no specific symbols requested, use Smart Scanner
+    if (!symbolsToFetch) {
+      // Step 1: Get Top 20 High-Volume Candidates (Liquidity Filter)
+      const topCoins = await scanTopMarketCoins();
+      symbolsToFetch = topCoins.length > 0 ? topCoins : ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT'];
+    }
+
+    // Step 2: Analysis & Scoring (Confluence Score)
     const signals = await generateSignals(symbolsToFetch);
-    return signals;
+
+    // Step 3: Smart Sorting (Rank by Confidence Score)
+    // Sort descending: High Confidence -> Low Confidence
+    return signals.sort((a, b) => b.confidence - a.confidence);
+
   } catch (error) {
     console.error('Error fetching signals:', error);
     return [];
@@ -63,11 +75,11 @@ export const getRecentAlerts = async (): Promise<any[]> => {
       let bg = 'bg-slate-500/10';
 
       if (signal.type === SignalType.LONG) {
-        type = 'Entry Long';
+        type = 'Entry Long (Buy)';
         color = 'text-bullish';
         bg = 'bg-green-500/10';
       } else if (signal.type === SignalType.SHORT) {
-        type = 'Entry Short';
+        type = 'Bearish (Avoid/Sell)';
         color = 'text-bearish';
         bg = 'bg-red-500/10';
       }

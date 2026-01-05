@@ -253,66 +253,78 @@ const determineSignalType = (indicators: TechnicalIndicators, change24h: number)
   return SignalType.NEUTRAL;
 };
 
-const calculateConfidence = (indicators: TechnicalIndicators, change24h: number, signalType: SignalType): number => {
-  const { rsi, volumeRatio } = indicators;
 
-  // Base confidence based on market noise (randomized slightly to realistic levels)
-  let confidence = 60 + (Math.random() * 10 - 5);
+const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: SignalType, change24h: number): { score: number, reasons: string[] } => {
+  let score = 0;
+  const reasons: string[] = [];
+  const { rsi, currentPrice, ma20, ma50, volumeRatio, resistance, support } = indicators;
 
+  // 1. Trend Alignment (Key factor)
   if (signalType === SignalType.LONG) {
-    if (rsi > 40 && rsi < 60) confidence += 10;
-    if (volumeRatio > 1.2) confidence += 5;
-    if (change24h > 2) confidence += 5;
+    if (currentPrice > ma50) { score += 1.5; reasons.push('Uptrend (Price > MA50)'); }
+    if (ma20 > ma50) { score += 1; reasons.push('Golden Cross (MA20 > MA50)'); }
   } else if (signalType === SignalType.SHORT) {
-    if (rsi > 40 && rsi < 60) confidence += 10;
-    if (volumeRatio > 1.2) confidence += 5;
-    if (change24h < -2) confidence += 5;
-  } else {
-    // Neutral but needs variance
-    if (volumeRatio < 0.8) confidence += 15; // Confident it's boring
-    if (rsi > 45 && rsi < 55) confidence += 10;
+    if (currentPrice < ma50) { score += 1.5; reasons.push('Downtrend (Price < MA50)'); }
+    if (ma20 < ma50) { score += 1; reasons.push('Death Cross (MA20 < MA50)'); }
   }
 
-  return Math.round(Math.min(99, Math.max(50, confidence)));
+  // 2. Momentum (RSI)
+  if (signalType === SignalType.LONG) {
+    if (rsi > 40 && rsi < 65) { score += 1; reasons.push('RSI Bullish Zone'); }
+    else if (rsi < 30) { score += 1.5; reasons.push('RSI Oversold (Bounce likely)'); }
+  } else if (signalType === SignalType.SHORT) {
+    if (rsi < 60 && rsi > 35) { score += 1; reasons.push('RSI Bearish Zone'); }
+    else if (rsi > 70) { score += 1.5; reasons.push('RSI Overbought (Rejection likely)'); }
+  }
+
+  // 3. Volume Confirmation
+  if (volumeRatio > 1.2) { score += 1; reasons.push(`High Volume (x${volumeRatio})`); }
+
+  // 4. Structure
+  if (signalType === SignalType.LONG) {
+    const distToSupport = (currentPrice - support) / currentPrice;
+    if (distToSupport < 0.02) { score += 1; reasons.push('Near Support Area'); }
+  } else if (signalType === SignalType.SHORT) {
+    const distToRes = (resistance - currentPrice) / currentPrice;
+    if (distToRes < 0.02) { score += 1; reasons.push('Near Resistance Area'); }
+  }
+
+  // Cap score at 10 for normalization logic
+  return { score: Math.min(score, 6), reasons }; // Max realistic score ~6
+};
+
+const calculateConfidence = (indicators: TechnicalIndicators, change24h: number, signalType: SignalType): number => {
+  const { score } = calculateConfluenceScore(indicators, signalType, change24h);
+
+  // Normalize score 0-6 to percentage 30-95
+  // Score 0-1: Weak (30-40%)
+  // Score 2-3: Medium (50-65%)
+  // Score 4: Strong (75%)
+  // Score 5+: Very Strong (85%+)
+
+  let baseConfidence = 30;
+  if (score >= 5) baseConfidence = 85 + (score - 5) * 5;
+  else if (score >= 4) baseConfidence = 75 + (score - 4) * 10;
+  else if (score >= 2) baseConfidence = 50 + (score - 2) * 12;
+  else baseConfidence = 30 + score * 10;
+
+  return Math.min(98, Math.round(baseConfidence));
 };
 
 const generateSummary = (signalType: SignalType, indicators: TechnicalIndicators, change24h: number): string => {
-  const { rsi, volumeRatio } = indicators;
+  const { reasons } = calculateConfluenceScore(indicators, signalType, change24h);
 
-  if (signalType === SignalType.LONG) {
-    const phrases = [
-      'Lực mua đang áp đảo, volume tốt.',
-      'Breakout thành công khỏi vùng giá tích lũy.',
-      'RSI ủng hộ xu hướng tăng tiếp diễn.',
-      'Dòng tiền thông minh đang gom hàng.'
-    ];
-    return phrases[Math.floor(Math.random() * phrases.length)];
-  } else if (signalType === SignalType.SHORT) {
-    const phrases = [
-      'Áp lực bán gia tăng tại kháng cự.',
-      'Mất mốc hỗ trợ quan trọng, ưu tiên Short.',
-      'Dòng tiền đang rút ra, cẩn trọng điều chỉnh.',
-      'RSI phân kỳ âm, tín hiệu đảo chiều.'
-    ];
-    return phrases[Math.floor(Math.random() * phrases.length)];
-  }
+  if (reasons.length === 0) return 'Tín hiệu yếu, chưa có nhiều yếu tố ủng hộ.';
 
-  // Neutral variations
-  const neutralPhrases = [
-    'Thị trường đi ngang, biên độ hẹp.',
-    'Chưa có xu hướng rõ ràng, nên quan sát thêm.',
-    'Volume thấp, rủi ro cao nếu vào lệnh.',
-    'Đang tích lũy tại vùng hỗ trợ, chờ xác nhận.',
-    'Sideway khó chịu, ưu tiên giữ vốn.'
-  ];
-  return neutralPhrases[Math.floor(Math.random() * neutralPhrases.length)];
+  // Combine top 2-3 reasons
+  return reasons.slice(0, 3).join('. ') + '.';
 };
 
 const getTimeframe = (volumeRatio: number): string => {
-  if (volumeRatio > 2.5) return '15m'; // High urgency
-  if (volumeRatio > 1.5) return '1H';
-  // Randomize slightly between 1H and 4H for normal markets
-  return Math.random() > 0.5 ? '4H' : '1H';
+  // Higher volume = Lower timeframe reaction needed
+  if (volumeRatio > 3.0) return '15m (Scalp)';
+  if (volumeRatio > 1.5) return '1H (Intraday)';
+  return '4H (Swing)';
 };
 
 const formatTimestamp = (): string => {
@@ -340,7 +352,7 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
           return {
             id: symbol.toLowerCase(),
             pair,
-            exchange: 'Binance Perp',
+            exchange: 'Binance Spot',
             price: marketData.price,
             change24h: parseFloat(marketData.change24h.toFixed(2)),
             type: signalType,
@@ -407,10 +419,10 @@ const scanTopMarketCoins = async (): Promise<string[]> => {
       !['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT'].includes(t.symbol)
     );
 
-    // Sort by Quote Volume (Liquidity) -> Top 15
+    // Sort by Quote Volume (Liquidity) -> Top 20
     const topCoins = validPairs
       .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
-      .slice(0, 15)
+      .slice(0, 20)
       .map((t: any) => t.symbol);
 
     return topCoins;

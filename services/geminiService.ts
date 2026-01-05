@@ -38,17 +38,18 @@ export const getMarketAnalysis = async (pair: string, context?: GlobalMarketCont
     ` : "Sentiment: Unknown";
 
     const prompt = `
-    ROLE: You are an elite Crypto Hedge Fund Analyst running a strict 10-Part AI Trading System.
+    ROLE: You are an elite Crypto Spot Trader & Analyst. You focus on ACCUMULATION and HODL strategies.
     
     SYSTEM RULES (DO NOT BREAK):
-    1. BTC is the Map: If BTC trend is DOWN or CHOPPY, you CANNOT go Long on Alts. Rules: 
-       - BTC < EMA200 (4H) = Bearish Bias.
-       - BTC RSI > 70 = Risk of Reversal.
-    2. Liquidity: Look for stop hunts. Price moves to liquidity.
-    3. Sentiment: High Fear = Buy Dip opportunity? High Greed = Sell Top?
+    1. SPOT ONLY: You CANNOT Short. If the market is Bearish, your advice must be "SIT OUT" (keep USDT) or "SELL" (Exit).
+    2. BTC is the King: 
+       - BTC < EMA200 (4H) = Bearish Market -> Recommend SIT OUT/KEEP CASH.
+       - BTC > EMA200 (4H) = Bullish Market -> Look for Dip Buy.
+    3. Capital Preservation: 
+       - "Cash is a position". Do not force buys in a downtrend.
     4. Execution: 
        - If market is unclear -> ACTION MUST BE "SIT OUT".
-       - No forcing trades. Preserving capital is #1.
+       - Focus on 'Buy the Dip' in uptrends.
     
     INPUT DATA:
     - Pair: ${pair}
