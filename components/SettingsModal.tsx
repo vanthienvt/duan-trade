@@ -58,6 +58,28 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             value={settings.chatId}
                             onChange={e => setSettings({ ...settings, chatId: e.target.value })}
                         />
+                        <div className="mt-2 text-[11px] text-text-secondary bg-background/30 p-2 rounded border border-white/5">
+                            <p className="font-bold mb-1 text-primary">💡 Cách lấy Chat ID dễ nhất:</p>
+                            <ol className="list-decimal pl-4 space-y-1">
+                                <li>Nhập <b>Bot Token</b> vào ô bên trên trước.</li>
+                                <li>Vào Telegram, tìm bot của bạn và nhắn: <code>alo</code></li>
+                                <li>
+                                    {settings.botToken.length > 10 ? (
+                                        <a
+                                            href={`https://api.telegram.org/bot${settings.botToken}/getUpdates`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-blue-400 underline hover:text-blue-300"
+                                        >
+                                            Bấm vào link này để lấy ID
+                                        </a>
+                                    ) : (
+                                        <span className="opacity-50">Link sẽ hiện sau khi nhập Token...</span>
+                                    )}
+                                </li>
+                                <li>Tìm dòng <code>"id": 123456...</code> và copy số đó.</li>
+                            </ol>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg border border-white/5">
