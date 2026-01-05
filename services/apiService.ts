@@ -1,4 +1,4 @@
-import { MarketSignal } from '../types';
+import { MarketSignal, SignalType } from '../types';
 import { generateSignals, getMarketData as getBinanceMarketData } from './binanceService';
 
 export const getDashboardSignal = async (): Promise<MarketSignal | null> => {
@@ -47,53 +47,42 @@ export const getMarketData = async (symbol: string) => {
 
 
 export const getRecentAlerts = async (): Promise<any[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+  try {
+    // List of coins to monitor for alerts (using popular/volatile coins for interesting alerts)
+    const alertSymbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'DOGEUSDT', 'ADAUSDT', 'RENDERUSDT', 'BNBUSDT', 'PEPEUSDT'];
 
-  // Return dynamic signals based on current time
-  const now = new Date();
-  const minutes = now.getMinutes();
+    // Get signals for these symbols using the existing service
+    const signals = await generateSignals(alertSymbols);
 
-  return [
-    {
-      pair: 'SOL',
-      type: minutes % 2 === 0 ? 'Entry Long' : 'Entry Short',
-      time: '2m',
-      color: minutes % 2 === 0 ? 'text-bullish' : 'text-bearish',
-      icon: 'S',
-      bg: 'bg-indigo-500/10'
-    },
-    {
-      pair: 'BTC',
-      type: 'Sit Out',
-      time: '5m',
-      color: 'text-text-secondary',
-      icon: 'B',
-      bg: 'bg-orange-500/10'
-    },
-    {
-      pair: 'ETH',
-      type: minutes % 3 === 0 ? 'Short Setup' : 'Long Setup',
-      time: '12m',
-      color: minutes % 3 === 0 ? 'text-bearish' : 'text-bullish',
-      icon: 'E',
-      bg: 'bg-blue-500/10'
-    },
-    {
-      pair: 'DOGE',
-      type: 'Entry Long',
-      time: '15m',
-      color: 'text-bullish',
-      icon: 'D',
-      bg: 'bg-yellow-500/10'
-    },
-    {
-      pair: 'RENDER',
-      type: minutes % 4 === 0 ? 'Sit Out' : 'Long Setup',
-      time: '18m',
-      color: minutes % 4 === 0 ? 'text-text-secondary' : 'text-bullish',
-      icon: 'R',
-      bg: 'bg-purple-500/10'
-    }
-  ];
+    // Transform MarketSignal objects into the alert format expected by UI
+    return signals.map(signal => {
+      const baseSymbol = signal.pair.split('/')[0];
+
+      let type = 'Sit Out';
+      let color = 'text-text-secondary';
+      let bg = 'bg-slate-500/10';
+
+      if (signal.type === SignalType.LONG) {
+        type = 'Entry Long';
+        color = 'text-bullish';
+        bg = 'bg-green-500/10';
+      } else if (signal.type === SignalType.SHORT) {
+        type = 'Entry Short';
+        color = 'text-bearish';
+        bg = 'bg-red-500/10';
+      }
+
+      return {
+        pair: baseSymbol,
+        type: type,
+        time: signal.timeframe, // Use timeframe to indicate the basis of the signal
+        color: color,
+        icon: baseSymbol.charAt(0),
+        bg: bg
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching recent alerts:', error);
+    return [];
+  }
 };

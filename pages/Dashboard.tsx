@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, SignalType, MarketSignal } from '../types';
 import { getDashboardSignal, getRecentAlerts } from '../services/apiService';
+import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
 
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
@@ -23,9 +24,11 @@ const FALLBACK_SIGNAL: MarketSignal = {
 
 const Dashboard: React.FC<Props> = ({ onNavigate }) => {
   const [signal, setSignal] = useState<MarketSignal | null>(null);
-  const [alerts, setAlerts] = useState<any[]>([]); // New state for alerts
+  const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,6 +40,15 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
       if (data) {
         setSignal(data);
         setHasError(false);
+
+        // Trigger AI Analysis automatically when data is loaded
+        if (data.id !== 'fallback') {
+          setIsAnalyzing(true);
+          getMarketAnalysis(data.pair).then(result => {
+            setAiAnalysis(result);
+            setIsAnalyzing(false);
+          });
+        }
       } else {
         setSignal(FALLBACK_SIGNAL);
         setHasError(true);
@@ -157,13 +169,47 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
 
       {/* Analysis Grid */}
       <div className="px-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider mb-4">Chi Tiết Phân Tích</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider mb-4">Chi Tiết Phân Tích (AI Gemini)</h2>
+
+        {/* AI Summary Section */}
+        {aiAnalysis && (
+          <div className="mb-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-indigo-400 mt-1">psychology</span>
+              <div>
+                <h3 className="text-indigo-300 text-xs font-bold uppercase tracking-wider mb-1">Góc nhìn chuyên gia</h3>
+                <p className="text-sm text-gray-200 leading-relaxed">{aiAnalysis.summary}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 mb-10">
           {[
-            { label: 'Xu Hướng', val: 'Tăng Mạnh', icon: 'trending_up', color: 'text-primary' },
-            { label: 'Thanh Khoản', val: 'Ổn Định', icon: 'ssid_chart', color: 'text-teal-400' },
-            { label: 'Tâm Lý', val: 'Hưng Phấn', icon: 'mood', color: 'text-orange-400' },
-            { label: 'Rủi Ro', val: 'Trung Bình', icon: 'shield', color: 'text-purple-400' }
+            {
+              label: 'Xu Hướng',
+              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.trendStatus || 'Chờ dữ liệu',
+              icon: 'trending_up',
+              color: 'text-primary'
+            },
+            {
+              label: 'Thanh Khoản',
+              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.liquidityStatus || 'Chờ dữ liệu',
+              icon: 'ssid_chart',
+              color: 'text-teal-400'
+            },
+            {
+              label: 'Tâm Lý',
+              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.sentimentStatus || 'Chờ dữ liệu',
+              icon: 'mood',
+              color: 'text-orange-400'
+            },
+            {
+              label: 'Rủi Ro',
+              val: isAnalyzing ? 'Đang phân tích...' : aiAnalysis?.riskLevel || 'Chờ dữ liệu',
+              icon: 'shield',
+              color: 'text-purple-400'
+            }
           ].map((item, i) => (
             <div key={i} className="bg-surface border border-white/5 rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden group">
               <div className={`h-10 w-10 rounded-lg bg-current/10 flex items-center justify-center ${item.color}`}>
@@ -171,7 +217,7 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
               </div>
               <div>
                 <h3 className="text-text-secondary text-[10px] font-bold uppercase tracking-wider">{item.label}</h3>
-                <p className="text-sm font-bold leading-tight">{item.val}</p>
+                <p className={`text-sm font-bold leading-tight ${isAnalyzing ? 'animate-pulse opacity-50' : ''}`}>{item.val}</p>
               </div>
               <span className={`material-symbols-outlined absolute -top-2 -right-2 text-6xl opacity-5 ${item.color}`}>{item.icon}</span>
             </div>
