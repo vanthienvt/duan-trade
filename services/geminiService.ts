@@ -70,7 +70,7 @@ export const getMarketAnalysis = async (pair: string, context?: GlobalMarketCont
     `;
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-001",
+      model: "gemini-pro",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
