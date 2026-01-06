@@ -69,36 +69,53 @@ export const getMarketAnalysis = async (pair: string, context?: GlobalMarketCont
     Return pure JSON matching the schema.
     `;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-pro",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: SchemaType.OBJECT,
-          properties: {
-            action: { type: SchemaType.STRING, enum: ["LONG", "SHORT", "SIT OUT"] },
-            confidence: { type: SchemaType.NUMBER },
-            summary: { type: SchemaType.STRING },
-            trendStatus: { type: SchemaType.STRING },
-            liquidity: { type: SchemaType.STRING },
-            sentiment: { type: SchemaType.STRING },
-            riskLevel: { type: SchemaType.STRING },
-            entryZone: { type: SchemaType.STRING },
-            stopLoss: { type: SchemaType.STRING },
-            target: { type: SchemaType.STRING }
-          },
-          required: ["action", "confidence", "summary", "trendStatus", "riskLevel"]
+
+    // List of models to try in order of preference
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro"];
+
+    let lastError;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Trying AI model: ${modelName}`);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: SchemaType.OBJECT,
+              properties: {
+                action: { type: SchemaType.STRING, enum: ["LONG", "SHORT", "SIT OUT"] },
+                confidence: { type: SchemaType.NUMBER },
+                summary: { type: SchemaType.STRING },
+                trendStatus: { type: SchemaType.STRING },
+                liquidity: { type: SchemaType.STRING },
+                sentiment: { type: SchemaType.STRING },
+                riskLevel: { type: SchemaType.STRING },
+                entryZone: { type: SchemaType.STRING },
+                stopLoss: { type: SchemaType.STRING },
+                target: { type: SchemaType.STRING }
+              },
+              required: ["action", "confidence", "summary", "trendStatus", "riskLevel"]
+            }
+          }
+        });
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+
+        if (responseText) {
+          return JSON.parse(responseText);
         }
+      } catch (error) {
+        console.warn(`Model ${modelName} failed:`, error);
+        lastError = error;
+        // Continue to next model
       }
-    });
-
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-
-    if (responseText) {
-      return JSON.parse(responseText);
     }
-    throw new Error("Empty response");
+
+    // If all models fail, throw the last error
+    throw lastError || new Error("All models failed");
 
   } catch (error) {
     console.error("AI Analysis Error:", error);
@@ -106,7 +123,7 @@ export const getMarketAnalysis = async (pair: string, context?: GlobalMarketCont
     return {
       action: "SIT OUT",
       confidence: 0,
-      summary: `Hệ thống gặp lỗi kết nối AI: ${(error as any)?.message || 'Unknown error'}. Vui lòng kiểm tra API Key.`,
+      summary: `Hệ thống gặp lỗi kết nối AI (đã thử nhiều server): ${(error as any)?.message || 'Unknown error'}. Vui lòng kiểm tra API Key.`,
       trendStatus: "Unknown",
       liquidity: "Unknown",
       sentiment: "Neutral",
