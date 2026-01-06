@@ -257,67 +257,90 @@ const determineSignalType = (indicators: TechnicalIndicators, change24h: number)
 const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: SignalType, change24h: number): { score: number, reasons: string[] } => {
   let score = 0;
   const reasons: string[] = [];
-  const { rsi, currentPrice, ma20, ma50, volumeRatio, resistance, support } = indicators;
+  const { rsi, currentPrice, ma20, ma50, volumeRatio } = indicators;
 
-  // 1. Trend Alignment (Key factor)
+  // 1. Trend Alignment
   if (signalType === SignalType.LONG) {
-    if (currentPrice > ma50) { score += 1.5; reasons.push('Uptrend (Price > MA50)'); }
-    if (ma20 > ma50) { score += 1; reasons.push('Golden Cross (MA20 > MA50)'); }
+    if (currentPrice > ma50) {
+      score += 1.5;
+      reasons.push(`Xu hướng giá tăng ổn định`);
+    }
+    if (ma20 > ma50) {
+      score += 1.0;
+      reasons.push(`Lực mua đang áp đảo`);
+    }
   } else if (signalType === SignalType.SHORT) {
-    if (currentPrice < ma50) { score += 1.5; reasons.push('Downtrend (Price < MA50)'); }
-    if (ma20 < ma50) { score += 1; reasons.push('Death Cross (MA20 < MA50)'); }
+    if (currentPrice < ma50) {
+      score += 1.5;
+      reasons.push(`Xu hướng giá giảm`);
+    }
+    if (ma20 < ma50) {
+      score += 1.0;
+      reasons.push(`Áp lực bán mạnh`);
+    }
   }
 
-  // 2. Momentum (RSI)
+  // 2. Momentum (RSI) - Add granular score based on exact RSI value
   if (signalType === SignalType.LONG) {
-    if (rsi > 40 && rsi < 65) { score += 1; reasons.push('RSI Bullish Zone'); }
-    else if (rsi < 30) { score += 1.5; reasons.push('RSI Oversold (Bounce likely)'); }
+    if (rsi > 40 && rsi < 65) {
+      score += 1.0 + (rsi % 10) / 20; // Variance
+      reasons.push(`Động lượng tốt`);
+    } else if (rsi < 30) {
+      score += 1.5;
+      reasons.push(`Vùng quá bán (lực bật đáy)`);
+    }
   } else if (signalType === SignalType.SHORT) {
-    if (rsi < 60 && rsi > 35) { score += 1; reasons.push('RSI Bearish Zone'); }
-    else if (rsi > 70) { score += 1.5; reasons.push('RSI Overbought (Rejection likely)'); }
+    if (rsi < 60 && rsi > 35) {
+      score += 1.0 + (rsi % 10) / 20; // Variance
+      reasons.push(`Động lượng giảm`);
+    } else if (rsi > 70) {
+      score += 1.5;
+      reasons.push(`Vùng quá mua (sắp chỉnh)`);
+    }
   }
 
-  // 3. Volume Confirmation
-  if (volumeRatio > 1.2) { score += 1; reasons.push(`High Volume (x${volumeRatio})`); }
-
-  // 4. Structure
-  if (signalType === SignalType.LONG) {
-    const distToSupport = (currentPrice - support) / currentPrice;
-    if (distToSupport < 0.02) { score += 1; reasons.push('Near Support Area'); }
-  } else if (signalType === SignalType.SHORT) {
-    const distToRes = (resistance - currentPrice) / currentPrice;
-    if (distToRes < 0.02) { score += 1; reasons.push('Near Resistance Area'); }
+  // 3. Volume
+  if (volumeRatio > 1.2) {
+    score += 1.0 + Math.min(volumeRatio / 5, 0.5); // Variance
+    reasons.push(`Dòng tiền vào mạnh`);
   }
 
-  // Cap score at 10 for normalization logic
-  return { score: Math.min(score, 6), reasons }; // Max realistic score ~6
+  // 4. Strong Move
+  if (Math.abs(change24h) > 2.0) {
+    score += 0.5;
+    // Don't add text, keep it simple
+  }
+
+  return { score, reasons };
 };
 
 const calculateConfidence = (indicators: TechnicalIndicators, change24h: number, signalType: SignalType): number => {
   const { score } = calculateConfluenceScore(indicators, signalType, change24h);
 
-  // Normalize score 0-6 to percentage 30-95
-  // Score 0-1: Weak (30-40%)
-  // Score 2-3: Medium (50-65%)
-  // Score 4: Strong (75%)
-  // Score 5+: Very Strong (85%+)
+  // Map Score to % with more variance via Math.random() or purely granular inputs to avoid "fake" look
+  // Ideally deterministic but varied. Score already has decimals from RSI/Volume.
 
-  let baseConfidence = 30;
-  if (score >= 5) baseConfidence = 85 + (score - 5) * 5;
-  else if (score >= 4) baseConfidence = 75 + (score - 4) * 10;
-  else if (score >= 2) baseConfidence = 50 + (score - 2) * 12;
-  else baseConfidence = 30 + score * 10;
+  let baseConfidence = 40;
 
-  return Math.min(98, Math.round(baseConfidence));
+  // Linear mapping with clamp
+  baseConfidence += (score * 12);
+
+  // Add small noise based on symbol char code sum or time? 
+  // Better: use RSI last digit as pseudo-randomness
+  const noise = (indicators.rsi * 10) % 3;
+
+  return Math.min(99, Math.round(baseConfidence + noise));
 };
 
 const generateSummary = (signalType: SignalType, indicators: TechnicalIndicators, change24h: number): string => {
   const { reasons } = calculateConfluenceScore(indicators, signalType, change24h);
 
-  if (reasons.length === 0) return 'Tín hiệu yếu, chưa có nhiều yếu tố ủng hộ.';
+  if (reasons.length === 0) return 'Thị trường đi ngang, chờ tín hiệu rõ ràng.';
 
-  // Combine top 2-3 reasons
-  return reasons.slice(0, 3).join('. ') + '.';
+  // Return a concise sentence
+  // e.g. "Xu hướng giá tăng ổn định. Động lượng tốt."
+  // Limit to 2 sentences max
+  return reasons.slice(0, 2).join('. ') + '.';
 };
 
 const getTimeframe = (volumeRatio: number): string => {

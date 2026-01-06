@@ -22,6 +22,12 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
     return new Set<string>(saved ? JSON.parse(saved) : []);
   });
 
+  // Helper
+  const formatPrice = (price: number) => {
+    if (price < 0.01) return price.toFixed(8); // PEPE, SHIB
+    return price.toLocaleString();
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -44,7 +50,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
             const icon = signal.type === SignalType.LONG ? '🟢' : '🔴';
             const msg = `${icon} *TÍN HIỆU HOT: ${signal.pair}*\n\n` +
               `• Xu hướng: *${signal.type}*\n` +
-              `• Giá: $${signal.price.toLocaleString()}\n` +
+              `• Giá: $${formatPrice(signal.price)}\n` +
               `• Uy tín: ${signal.confidence}%\n` +
               `• Lý do: ${signal.summary}\n\n` +
               `👉 Vào App xem chi tiết!`;
@@ -176,14 +182,25 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                      <span className="material-symbols-outlined text-primary text-[28px]">token</span>
+                    <div className="h-12 w-12 rounded-full bg-surface border border-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                      <img
+                        src={`https://assets.coincap.io/assets/icons/${signal.pair.split('/')[0].toLowerCase()}@2x.png`}
+                        alt={signal.pair}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 bg-primary/20 flex items-center justify-center font-black text-sm text-primary">
+                        {signal.pair[0]}
+                      </div>
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="text-base font-bold">{signal.pair}</h4>
                       </div>
-                      <p className="text-xs font-medium text-text-secondary mt-0.5 tracking-tight">Giá: ${signal.price.toLocaleString()}</p>
+                      <p className="text-xs font-medium text-text-secondary mt-0.5 tracking-tight">Giá: ${formatPrice(signal.price)}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
