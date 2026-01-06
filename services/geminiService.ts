@@ -80,7 +80,7 @@ export const getMarketAnalysis = async (pair: string, context?: GlobalMarketCont
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-001",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
