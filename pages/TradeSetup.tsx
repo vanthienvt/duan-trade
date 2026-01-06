@@ -71,6 +71,19 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
             <p className="text-[11px] text-text-secondary font-medium leading-relaxed italic opacity-80">
               {signal.summary}
             </p>
+            {/* Pro Indicators Display */}
+            <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/5">
+              <div className="bg-background/40 rounded-lg p-2 border border-white/5">
+                <p className="text-[9px] text-text-secondary uppercase font-bold">Open Interest</p>
+                <p className="text-xs font-black text-white">{signal.openInterest || 'N/A'}</p>
+              </div>
+              <div className="bg-background/40 rounded-lg p-2 border border-white/5">
+                <p className="text-[9px] text-text-secondary uppercase font-bold">Funding Rate</p>
+                <p className={`text-xs font-black ${parseFloat(signal.fundingRate || '0') > 0.01 ? 'text-bearish' : 'text-bullish'}`}>
+                  {signal.fundingRate || '0.00%'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
