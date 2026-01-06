@@ -154,10 +154,12 @@ const calculateEMA = (prices: number[], period: number): number => {
 const getProData = async (symbol: string) => {
   try {
     const formatted = symbol.replace('/', '');
+    const PROXY = 'https://api.allorigins.win/raw?url=';
+    const timestamp = Date.now();
     const [oiRes, fundRes, oiHistRes] = await Promise.all([
-      fetch(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formatted}`),
-      fetch(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}`),
-      fetch(`${BINANCE_FAPI_BASE}/openInterestHist?symbol=${formatted}&period=1h&limit=2`)
+      fetch(`${PROXY}${encodeURIComponent(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formatted}&_t=${timestamp}`)}`),
+      fetch(`${PROXY}${encodeURIComponent(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}&_t=${timestamp}`)}`),
+      fetch(`${PROXY}${encodeURIComponent(`${BINANCE_FAPI_BASE}/openInterestHist?symbol=${formatted}&period=1h&limit=2&_t=${timestamp}`)}`)
     ]);
 
     const oiData = oiRes.ok ? await oiRes.json() : { openInterest: '0' };

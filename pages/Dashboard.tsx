@@ -56,7 +56,15 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
           ]);
 
           // Trigger AI with Context
-          getMarketAnalysis(data.pair, {
+          // Pass local coin data as fallback
+          const coinData = {
+            symbol: data.pair,
+            price: data.price,
+            change24h: data.change24h,
+            rsi: data.rsi || 50
+          };
+
+          getMarketAnalysis(data.pair, coinData, {
             btcTrend: btcContext,
             fearAndGreed: sentiment
           }).then(result => {
