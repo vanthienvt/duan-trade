@@ -3,6 +3,7 @@ import { View, MarketSignal, SignalType } from '../types';
 import { getSignals } from '../services/apiService';
 import { getBTCContext, scanTopMarketCoins } from '../services/binanceService';
 import SettingsModal from '../components/SettingsModal';
+import { formatPrice } from '../utils';
 import { sendTelegramAlert } from '../services/telegramService';
 
 interface Props {
@@ -22,11 +23,6 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
     return new Set<string>(saved ? JSON.parse(saved) : []);
   });
 
-  // Helper
-  const formatPrice = (price: number) => {
-    if (price < 0.01) return price.toFixed(8); // PEPE, SHIB
-    return price.toLocaleString();
-  };
 
   useEffect(() => {
     const fetchData = async () => {

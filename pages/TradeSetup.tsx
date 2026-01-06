@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, MarketSignal, SignalType } from '../types';
+import { formatPrice } from '../utils';
 
 interface Props {
   signal: MarketSignal | null;
@@ -75,11 +76,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
   if (!signal) return null;
 
   // Helper to format price dynamically based on value
-  const formatPrice = (price: number) => {
-    if (price < 0.01) return price.toFixed(8);
-    if (price < 1) return price.toFixed(4);
-    return price.toFixed(2);
-  };
+  // Uses utils.formatPrice
 
   return (
     <div className="flex flex-col animate-in slide-in-from-bottom duration-500 pb-32">
@@ -119,15 +116,20 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
               <span className="material-symbols-outlined text-primary">psychology</span>
               <h3 className="font-black text-sm uppercase tracking-wider">Phân tích AI</h3>
             </div>
-            <span className="px-2.5 py-1 rounded text-[9px] font-black bg-primary/20 text-primary uppercase tracking-[0.2em]">STRONG BUY</span>
+            <span className={`px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-[0.2em] ${signal.type === SignalType.LONG ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
+              {signal.type === SignalType.LONG ? 'STRONG BUY' : 'STRONG SELL'}
+            </span>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between text-xs font-bold">
               <span className="text-text-secondary uppercase">Độ mạnh xu hướng</span>
-              <span className="text-white">{signal.confidence}% Tăng</span>
+              <span className="text-white">{signal.confidence}% {signal.type === SignalType.LONG ? 'Tăng' : 'Giảm'}</span>
             </div>
             <div className="h-2 w-full bg-background rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-500 to-primary" style={{ width: `${signal.confidence}%` }}></div>
+              <div
+                className={`h-full bg-gradient-to-r ${signal.type === SignalType.LONG ? 'from-blue-500 to-bullish' : 'from-orange-500 to-bearish'}`}
+                style={{ width: `${signal.confidence}%` }}>
+              </div>
             </div>
             <p className="text-[11px] text-text-secondary font-medium leading-relaxed italic opacity-80">
               {signal.summary}
