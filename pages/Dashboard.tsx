@@ -249,12 +249,7 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
               icon: 'ads_click',
               color: 'text-purple-400'
             },
-            {
-              label: 'Vùng Mua',
-              val: isAnalyzing ? '...' : aiAnalysis?.entryZone || 'Chờ tín hiệu',
-              icon: 'ads_click',
-              color: 'text-purple-400'
-            },
+
             {
               label: 'Funding Rate',
               val: signal.fundingRate || '0.00%',
