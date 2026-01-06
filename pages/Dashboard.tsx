@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, SignalType, MarketSignal } from '../types';
 import { getDashboardSignal, getRecentAlerts, getFearAndGreedIndex } from '../services/apiService';
 import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
-import { getBTCContext, getOpenInterest, getFundingRate } from '../services/binanceService';
+import { getBTCContext } from '../services/binanceService';
 
 import GuideModal from '../components/GuideModal';
 
@@ -33,8 +33,6 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
   const [hasError, setHasError] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [funding, setFunding] = useState<string>('...');
-  const [oi, setOi] = useState<string>('...');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,15 +50,10 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
           setIsAnalyzing(true);
 
           // Fetch Context in parallel
-          const [btcContext, sentiment, fundingRate, openInterest] = await Promise.all([
+          const [btcContext, sentiment] = await Promise.all([
             getBTCContext(),
-            getFearAndGreedIndex(),
-            getFundingRate(data.pair),
-            getOpenInterest(data.pair)
+            getFearAndGreedIndex()
           ]);
-
-          setFunding(fundingRate);
-          setOi(openInterest);
 
           // Trigger AI with Context
           getMarketAnalysis(data.pair, {
@@ -163,7 +156,9 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
               </div>
             </div>
 
-            <p className="text-[10px] text-text-secondary mt-6 italic opacity-60">AI phân tích dựa trên dữ liệu {signal.timeframe} timeframe</p>
+            <p className="text-[10px] text-text-secondary mt-6 italic opacity-60">
+              AI phân tích dựa trên dữ liệu {signal.timeframe} • OI {signal.oiTrend === 'UP' ? 'đang tăng 🚀' : 'đi ngang'}
+            </p>
           </div>
         </div>
       </div>
@@ -255,14 +250,20 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
               color: 'text-purple-400'
             },
             {
+              label: 'Vùng Mua',
+              val: isAnalyzing ? '...' : aiAnalysis?.entryZone || 'Chờ tín hiệu',
+              icon: 'ads_click',
+              color: 'text-purple-400'
+            },
+            {
               label: 'Funding Rate',
-              val: funding,
+              val: signal.fundingRate || '0.00%',
               icon: 'currency_exchange',
-              color: funding.startsWith('-') ? 'text-bullish' : 'text-text-secondary'
+              color: (signal.fundingRate || '').startsWith('-') ? 'text-bullish' : 'text-text-secondary'
             },
             {
               label: 'Open Interest',
-              val: oi,
+              val: signal.openInterest || 'N/A',
               icon: 'stacked_line_chart',
               color: 'text-blue-400'
             }
