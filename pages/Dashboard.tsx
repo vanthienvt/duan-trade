@@ -5,6 +5,8 @@ import { getDashboardSignal, getRecentAlerts, getFearAndGreedIndex } from '../se
 import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
 import { getBTCContext, getOpenInterest, getFundingRate } from '../services/binanceService';
 
+import GuideModal from '../components/GuideModal';
+
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
 }
@@ -24,6 +26,7 @@ const FALLBACK_SIGNAL: MarketSignal = {
 };
 
 const Dashboard: React.FC<Props> = ({ onNavigate }) => {
+  const [showGuide, setShowGuide] = useState(false);
   const [signal, setSignal] = useState<MarketSignal | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +114,12 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-white/5">
         <h2 className="text-xl font-extrabold tracking-tight">Phân Tích Tổng Quan</h2>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowGuide(true)}
+            className="h-10 w-10 flex items-center justify-center rounded-full bg-surface text-white hover:bg-white/10 transition-colors"
+          >
+            <span className="material-symbols-outlined">school</span>
+          </button>
           <button className="h-10 w-10 flex items-center justify-center rounded-full bg-surface text-white">
             <span className="material-symbols-outlined">notifications</span>
           </button>
@@ -282,6 +291,8 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
           <span className="material-symbols-outlined">arrow_forward</span>
         </button>
       </div>
+
+      <GuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
     </div>
   );
 };
