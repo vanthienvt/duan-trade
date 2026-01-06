@@ -32,6 +32,8 @@ interface TechnicalIndicators {
   ma50: number;
   currentPrice: number;
   volumeRatio: number;
+  openInterest: string;
+  fundingRate: string;
   support: number;
   resistance: number;
 }
@@ -147,6 +149,28 @@ const calculateEMA = (prices: number[], period: number): number => {
   return trendEMA;
 };
 
+// Helper to safely get OI/Funding (futures only, might fail for some pairs)
+const getProData = async (symbol: string) => {
+  try {
+    const formatted = symbol.replace('/', '');
+    const [oiRes, fundRes] = await Promise.all([
+      fetch(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formatted}`),
+      fetch(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}`)
+    ]);
+
+    const oiData = oiRes.ok ? await oiRes.json() : { openInterest: '0' };
+    const fundData = fundRes.ok ? await fundRes.json() : { lastFundingRate: '0' };
+
+    return {
+      openInterest: parseFloat(oiData.openInterest || '0'),
+      fundingRate: parseFloat(fundData.lastFundingRate || '0')
+    };
+  } catch (e) {
+    return { openInterest: 0, fundingRate: 0 };
+  }
+};
+
+
 const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIndicators> => {
   try {
     const klines1h = await getKlineData(symbol, '1h', 50);
@@ -163,12 +187,17 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
     const avgVolume = klines1h.slice(-20).reduce((sum, k) => sum + k.volume, 0) / 20;
     const volumeRatio = volume / avgVolume;
 
+    // Fetch Pro Data
+    const { openInterest, fundingRate } = await getProData(symbol);
+
     return {
       rsi: Math.round(rsi14),
       ma20,
       ma50,
       currentPrice,
       volumeRatio: parseFloat(volumeRatio.toFixed(2)),
+      openInterest: (openInterest).toLocaleString(),
+      fundingRate: (fundingRate * 100).toFixed(4) + '%',
       support: currentPrice * 0.96,
       resistance: currentPrice * 1.05
     };
@@ -180,6 +209,8 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
       ma50: 0,
       currentPrice: 0,
       volumeRatio: 1,
+      openInterest: 'N/A',
+      fundingRate: '0.0000%',
       support: 0,
       resistance: 0
     };
@@ -257,7 +288,10 @@ const determineSignalType = (indicators: TechnicalIndicators, change24h: number)
 const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: SignalType, change24h: number): { score: number, reasons: string[] } => {
   let score = 0;
   const reasons: string[] = [];
-  const { rsi, currentPrice, ma20, ma50, volumeRatio } = indicators;
+  const { rsi, currentPrice, ma20, ma50, volumeRatio, fundingRate } = indicators;
+
+  const fRate = parseFloat(fundingRate.replace('%', ''));
+
 
   // 1. Trend Alignment
   if (signalType === SignalType.LONG) {
@@ -299,6 +333,17 @@ const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: S
     }
   }
 
+  // 3. Pro Indicators (OI & Funding)
+  // Funding Rate Penalty/Boost
+  if (Math.abs(fRate) > 0.05) {
+    if ((signalType === SignalType.LONG && fRate < 0) || (signalType === SignalType.SHORT && fRate > 0)) {
+      score += 0.5; // Funding favors trade
+      reasons.push('Funding ủng hộ');
+    } else {
+      score -= 1.0; // Crowded trade
+    }
+  }
+
   // 3. Volume
   if (volumeRatio > 1.2) {
     score += 1.0 + Math.min(volumeRatio / 5, 0.5); // Variance
@@ -317,19 +362,20 @@ const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: S
 const calculateConfidence = (indicators: TechnicalIndicators, change24h: number, signalType: SignalType): number => {
   const { score } = calculateConfluenceScore(indicators, signalType, change24h);
 
-  // Map Score to % with more variance via Math.random() or purely granular inputs to avoid "fake" look
-  // Ideally deterministic but varied. Score already has decimals from RSI/Volume.
+  // Map Score to %
+  // Max score is around 7-8. 
+  // We want realistic confidence: 50-85%. Very rarely >90%.
 
-  let baseConfidence = 40;
+  let baseConfidence = 50;
+  baseConfidence += (score * 5); // Each point = 5%
 
-  // Linear mapping with clamp
-  baseConfidence += (score * 12);
+  // Cap at 88% unless truly exceptional
+  const maxCap = score > 6.5 ? 92 : 85;
 
-  // Add small noise based on symbol char code sum or time? 
-  // Better: use RSI last digit as pseudo-randomness
+  // Add small noise
   const noise = (indicators.rsi * 10) % 3;
 
-  return Math.min(99, Math.round(baseConfidence + noise));
+  return Math.min(maxCap, Math.round(baseConfidence + noise));
 };
 
 const generateSummary = (signalType: SignalType, indicators: TechnicalIndicators, change24h: number): string => {
@@ -385,6 +431,8 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
             summary,
             volume24h: marketData.volume24h,
             rsi: marketData.rsi,
+            openInterest: marketData.openInterest,
+            fundingRate: marketData.fundingRate,
             support: marketData.support,
             resistance: marketData.resistance
           } as MarketSignal;

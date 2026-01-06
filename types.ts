@@ -17,6 +17,8 @@ export interface MarketSignal {
   timestamp: string;
   summary: string;
   volume24h?: number;
+  openInterest?: string;
+  fundingRate?: string;
   rsi?: number;
   support?: number;
   resistance?: number;
