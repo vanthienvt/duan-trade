@@ -1,11 +1,12 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY || '';
 if (!apiKey) {
   console.warn("⚠️ Gemini API Key is missing! AI features will not work.");
 }
-const ai = new GoogleGenAI({ apiKey });
+
+const genAI = new GoogleGenerativeAI(apiKey);
 
 export interface AIAnalysisResult {
   action: "LONG" | "SHORT" | "SIT OUT";
@@ -24,6 +25,7 @@ export interface GlobalMarketContext {
   btcTrend?: any;
   fearAndGreed?: { value: number; classification: string };
   macro?: string;
+  // Add other context fields if needed
 }
 
 export const getMarketAnalysis = async (pair: string, context?: GlobalMarketContext): Promise<AIAnalysisResult> => {
@@ -64,47 +66,37 @@ export const getMarketAnalysis = async (pair: string, context?: GlobalMarketCont
     Analyze the above context and the specific pair.
     Determine the optimal strategy for the next 24 hours.
     
-    OUTPUT JSON SCHEMA:
-    {
-      "action": "LONG" | "SHORT" | "SIT OUT",
-      "confidence": number (0-100),
-      "summary": "Concise executive summary (max 2 sentences) explaining WHY.",
-      "trendStatus": "Bullish/Bearish/Neutral/Choppy",
-      "liquidity": "Where is the liquidity? (e.g., 'Heatmap above 65k')",
-      "sentiment": "Market psychology reading",
-      "riskLevel": "Low/Medium/High/Extreme",
-      "entryZone": "Sniper entry price range (optional)",
-      "stopLoss": "Invalidation point (optional)",
-      "target": "Take profit zone (optional)"
-    }
+    Return pure JSON matching the schema.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-001",
-      contents: prompt,
-      config: {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.OBJECT,
+          type: SchemaType.OBJECT,
           properties: {
-            action: { type: Type.STRING, enum: ["LONG", "SHORT", "SIT OUT"] },
-            confidence: { type: Type.NUMBER },
-            summary: { type: Type.STRING },
-            trendStatus: { type: Type.STRING },
-            liquidity: { type: Type.STRING },
-            sentiment: { type: Type.STRING },
-            riskLevel: { type: Type.STRING },
-            entryZone: { type: Type.STRING },
-            stopLoss: { type: Type.STRING },
-            target: { type: Type.STRING }
+            action: { type: SchemaType.STRING, enum: ["LONG", "SHORT", "SIT OUT"] },
+            confidence: { type: SchemaType.NUMBER },
+            summary: { type: SchemaType.STRING },
+            trendStatus: { type: SchemaType.STRING },
+            liquidity: { type: SchemaType.STRING },
+            sentiment: { type: SchemaType.STRING },
+            riskLevel: { type: SchemaType.STRING },
+            entryZone: { type: SchemaType.STRING },
+            stopLoss: { type: SchemaType.STRING },
+            target: { type: SchemaType.STRING }
           },
           required: ["action", "confidence", "summary", "trendStatus", "riskLevel"]
         }
       }
     });
 
-    if (response.text) {
-      return JSON.parse(response.text);
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+
+    if (responseText) {
+      return JSON.parse(responseText);
     }
     throw new Error("Empty response");
 
