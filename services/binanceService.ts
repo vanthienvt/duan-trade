@@ -33,6 +33,7 @@ interface TechnicalIndicators {
   currentPrice: number;
   volumeRatio: number;
   openInterest: string;
+  oiTrend: 'UP' | 'DOWN' | 'NEUTRAL';
   fundingRate: string;
   support: number;
   resistance: number;
@@ -153,20 +154,32 @@ const calculateEMA = (prices: number[], period: number): number => {
 const getProData = async (symbol: string) => {
   try {
     const formatted = symbol.replace('/', '');
-    const [oiRes, fundRes] = await Promise.all([
+    const [oiRes, fundRes, oiHistRes] = await Promise.all([
       fetch(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formatted}`),
-      fetch(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}`)
+      fetch(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}`),
+      fetch(`${BINANCE_FAPI_BASE}/openInterestHist?symbol=${formatted}&period=1h&limit=2`)
     ]);
 
     const oiData = oiRes.ok ? await oiRes.json() : { openInterest: '0' };
     const fundData = fundRes.ok ? await fundRes.json() : { lastFundingRate: '0' };
+    const oiHistData = oiHistRes.ok ? await oiHistRes.json() : [];
+
+    // Determine OI Trend
+    let oiTrend: 'UP' | 'DOWN' | 'NEUTRAL' = 'NEUTRAL';
+    if (oiHistData && oiHistData.length >= 2) {
+      const current = parseFloat(oiHistData[1].sumOpenInterest);
+      const prev = parseFloat(oiHistData[0].sumOpenInterest);
+      if (current > prev * 1.01) oiTrend = 'UP'; // Increase > 1%
+      else if (current < prev * 0.99) oiTrend = 'DOWN'; // Decrease > 1%
+    }
 
     return {
       openInterest: parseFloat(oiData.openInterest || '0'),
-      fundingRate: parseFloat(fundData.lastFundingRate || '0')
+      fundingRate: parseFloat(fundData.lastFundingRate || '0'),
+      oiTrend
     };
   } catch (e) {
-    return { openInterest: 0, fundingRate: 0 };
+    return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
   }
 };
 
@@ -188,7 +201,7 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
     const volumeRatio = volume / avgVolume;
 
     // Fetch Pro Data
-    const { openInterest, fundingRate } = await getProData(symbol);
+    const { openInterest, fundingRate, oiTrend } = await getProData(symbol);
 
     return {
       rsi: Math.round(rsi14),
@@ -197,6 +210,7 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
       currentPrice,
       volumeRatio: parseFloat(volumeRatio.toFixed(2)),
       openInterest: (openInterest).toLocaleString(),
+      oiTrend,
       fundingRate: (fundingRate * 100).toFixed(4) + '%',
       support: currentPrice * 0.96,
       resistance: currentPrice * 1.05
@@ -210,6 +224,7 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
       currentPrice: 0,
       volumeRatio: 1,
       openInterest: 'N/A',
+      oiTrend: 'NEUTRAL',
       fundingRate: '0.0000%',
       support: 0,
       resistance: 0
@@ -288,10 +303,9 @@ const determineSignalType = (indicators: TechnicalIndicators, change24h: number)
 const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: SignalType, change24h: number): { score: number, reasons: string[] } => {
   let score = 0;
   const reasons: string[] = [];
-  const { rsi, currentPrice, ma20, ma50, volumeRatio, fundingRate } = indicators;
+  const { rsi, currentPrice, ma20, ma50, volumeRatio, fundingRate, oiTrend } = indicators;
 
   const fRate = parseFloat(fundingRate.replace('%', ''));
-
 
   // 1. Trend Alignment
   if (signalType === SignalType.LONG) {
@@ -334,17 +348,26 @@ const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: S
   }
 
   // 3. Pro Indicators (OI & Funding)
+  // Logic: Price Trend + OI Up = Strong Trend. Price Trend + OI Down = Weak Trend.
+
+  if (oiTrend === 'UP') {
+    score += 1.0;
+    reasons.push('Dòng tiền mở (OI) tăng mạnh');
+  } else if (oiTrend === 'DOWN') {
+    // No penalty, just no boost. Or maybe small penalty if this was supposed to be a breakout.
+  }
+
   // Funding Rate Penalty/Boost
   if (Math.abs(fRate) > 0.05) {
     if ((signalType === SignalType.LONG && fRate < 0) || (signalType === SignalType.SHORT && fRate > 0)) {
       score += 0.5; // Funding favors trade
       reasons.push('Funding ủng hộ');
     } else {
-      score -= 1.0; // Crowded trade
+      score -= 0.5; // Crowded trade (reduced penalty)
     }
   }
 
-  // 3. Volume
+  // 4. Volume
   if (volumeRatio > 1.2) {
     score += 1.0 + Math.min(volumeRatio / 5, 0.5); // Variance
     reasons.push(`Dòng tiền vào mạnh`);
