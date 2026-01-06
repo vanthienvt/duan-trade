@@ -150,39 +150,37 @@ const calculateEMA = (prices: number[], period: number): number => {
   return trendEMA;
 };
 
-// Helper to safely get OI/Funding with Multi-Proxy Fallback
+// Helper to safely get OI/Funding using AllOrigins JSON Wrapper (Most Stable for Static Sites)
 const getProData = async (symbol: string) => {
   const formatted = symbol.replace('/', '');
   const timestamp = Date.now();
 
-  // List of proxies to try in order
-  const proxies = [
-    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-  ];
+  // Wrapper function to fetch via AllOrigins JSON mode
+  // This bypasses CORS issues by returning the data inside a 'contents' string field
+  const fetchViaWrapper = async (endpoint: string) => {
+    try {
+      const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}&symbol=${formatted}&_t=${timestamp}`;
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
-  const fetchWithFallback = async (endpoint: string) => {
-    const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}&symbol=${formatted}&_t=${timestamp}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) return null;
 
-    for (const createProxyUrl of proxies) {
-      try {
-        const proxyUrl = createProxyUrl(targetUrl);
-        const res = await fetch(proxyUrl);
-        if (res.ok) return await res.json();
-      } catch (e) {
-        continue; // Try next proxy
-      }
+      const wrapperData = await res.json();
+      // AllOrigins returns valid data in 'contents'. If 'contents' is empty/null, it failed.
+      if (!wrapperData.contents) return null;
+
+      return JSON.parse(wrapperData.contents);
+    } catch (e) {
+      // console.warn('Fetch Error:', e);
+      return null;
     }
-    return null; // All failed
   };
 
   try {
-    // Parallel fetching with fallback logic inside each
     const [oiData, fundData, oiHistData] = await Promise.all([
-      fetchWithFallback('/openInterest?'),
-      fetchWithFallback('/premiumIndex?'),
-      fetchWithFallback('/openInterestHist?period=1h&limit=2')
+      fetchViaWrapper('/openInterest?'),
+      fetchViaWrapper('/premiumIndex?'),
+      fetchViaWrapper('/openInterestHist?period=1h&limit=2')
     ]);
 
     const openInterest = oiData?.openInterest || '0';
