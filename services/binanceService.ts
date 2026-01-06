@@ -150,32 +150,41 @@ const calculateEMA = (prices: number[], period: number): number => {
   return trendEMA;
 };
 
-// Helper to safely get OI/Funding (futures only, might fail for some pairs)
+// Helper to safely get OI/Funding with Multi-Proxy Fallback
 const getProData = async (symbol: string) => {
-  try {
-    const formatted = symbol.replace('/', '');
-    // Sử dụng corsproxy.io để nhanh và ổn định hơn
-    const PROXY = 'https://corsproxy.io/?';
-    const timestamp = Date.now();
+  const formatted = symbol.replace('/', '');
+  const timestamp = Date.now();
 
-    // Gọi song song, nhưng handle lỗi từng cái để tránh 1 cái fail làm fail tất cả
-    const fetchData = async (url: string) => {
+  // List of proxies to try in order
+  const proxies = [
+    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+  ];
+
+  const fetchWithFallback = async (endpoint: string) => {
+    const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}&symbol=${formatted}&_t=${timestamp}`;
+
+    for (const createProxyUrl of proxies) {
       try {
-        const res = await fetch(`${PROXY}${encodeURIComponent(url)}`);
-        if (!res.ok) return null;
-        return await res.json();
+        const proxyUrl = createProxyUrl(targetUrl);
+        const res = await fetch(proxyUrl);
+        if (res.ok) return await res.json();
       } catch (e) {
-        return null;
+        continue; // Try next proxy
       }
-    };
+    }
+    return null; // All failed
+  };
 
+  try {
+    // Parallel fetching with fallback logic inside each
     const [oiData, fundData, oiHistData] = await Promise.all([
-      fetchData(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formatted}&_t=${timestamp}`),
-      fetchData(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}&_t=${timestamp}`),
-      fetchData(`${BINANCE_FAPI_BASE}/openInterestHist?symbol=${formatted}&period=1h&limit=2&_t=${timestamp}`)
+      fetchWithFallback('/openInterest?'),
+      fetchWithFallback('/premiumIndex?'),
+      fetchWithFallback('/openInterestHist?period=1h&limit=2')
     ]);
 
-    // Parse data or use defaults
     const openInterest = oiData?.openInterest || '0';
     const fundingRate = fundData?.lastFundingRate || '0';
     const oiHist = Array.isArray(oiHistData) ? oiHistData : [];
@@ -185,16 +194,17 @@ const getProData = async (symbol: string) => {
     if (oiHist && oiHist.length >= 2) {
       const current = parseFloat(oiHistData[1].sumOpenInterest);
       const prev = parseFloat(oiHistData[0].sumOpenInterest);
-      if (current > prev * 1.01) oiTrend = 'UP'; // Increase > 1%
-      else if (current < prev * 0.99) oiTrend = 'DOWN'; // Decrease > 1%
+      if (current > prev * 1.01) oiTrend = 'UP';
+      else if (current < prev * 0.99) oiTrend = 'DOWN';
     }
 
     return {
-      openInterest: parseFloat(oiData.openInterest || '0'),
-      fundingRate: parseFloat(fundData.lastFundingRate || '0'),
+      openInterest: parseFloat(openInterest),
+      fundingRate: parseFloat(fundingRate),
       oiTrend
     };
   } catch (e) {
+    console.error('Pro Data Error:', e);
     return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
   }
 };
