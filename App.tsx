@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, MarketSignal, SignalType } from './types';
 import Dashboard from './pages/Dashboard';
 import SignalList from './pages/SignalList';
-import TradeJournal from './pages/TradeJournal';
+
 import AnalysisDetails from './pages/AnalysisDetails';
 
 import TradeSetup from './pages/TradeSetup';
@@ -25,8 +25,7 @@ const App: React.FC = () => {
         return <Dashboard onNavigate={navigateTo} />;
       case 'signals':
         return <SignalList onNavigate={navigateTo} />;
-      case 'journal':
-        return <TradeJournal onNavigate={navigateTo} />;
+
       case 'details':
         return <AnalysisDetails signal={selectedSignal} onNavigate={navigateTo} />;
       case 'setup':
@@ -61,16 +60,7 @@ const App: React.FC = () => {
             <span className="text-[10px] font-medium">Tín hiệu</span>
           </button>
 
-          <button
-            onClick={() => navigateTo('journal')}
-            className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${currentView === 'journal' ? 'text-primary' : 'text-text-secondary'}`}
-          >
-            <div className="relative">
-              <span className={`material-symbols-outlined ${currentView === 'journal' ? 'fill-1' : ''}`}>history_edu</span>
-              <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border border-background"></div>
-            </div>
-            <span className="text-[10px] font-medium">Nhật ký</span>
-          </button>
+
         </div>
       </nav>
     </div>
