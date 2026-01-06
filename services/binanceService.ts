@@ -154,21 +154,35 @@ const calculateEMA = (prices: number[], period: number): number => {
 const getProData = async (symbol: string) => {
   try {
     const formatted = symbol.replace('/', '');
-    const PROXY = 'https://api.allorigins.win/raw?url=';
+    // Sử dụng corsproxy.io để nhanh và ổn định hơn
+    const PROXY = 'https://corsproxy.io/?';
     const timestamp = Date.now();
-    const [oiRes, fundRes, oiHistRes] = await Promise.all([
-      fetch(`${PROXY}${encodeURIComponent(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formatted}&_t=${timestamp}`)}`),
-      fetch(`${PROXY}${encodeURIComponent(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}&_t=${timestamp}`)}`),
-      fetch(`${PROXY}${encodeURIComponent(`${BINANCE_FAPI_BASE}/openInterestHist?symbol=${formatted}&period=1h&limit=2&_t=${timestamp}`)}`)
+
+    // Gọi song song, nhưng handle lỗi từng cái để tránh 1 cái fail làm fail tất cả
+    const fetchData = async (url: string) => {
+      try {
+        const res = await fetch(`${PROXY}${encodeURIComponent(url)}`);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const [oiData, fundData, oiHistData] = await Promise.all([
+      fetchData(`${BINANCE_FAPI_BASE}/openInterest?symbol=${formatted}&_t=${timestamp}`),
+      fetchData(`${BINANCE_FAPI_BASE}/premiumIndex?symbol=${formatted}&_t=${timestamp}`),
+      fetchData(`${BINANCE_FAPI_BASE}/openInterestHist?symbol=${formatted}&period=1h&limit=2&_t=${timestamp}`)
     ]);
 
-    const oiData = oiRes.ok ? await oiRes.json() : { openInterest: '0' };
-    const fundData = fundRes.ok ? await fundRes.json() : { lastFundingRate: '0' };
-    const oiHistData = oiHistRes.ok ? await oiHistRes.json() : [];
+    // Parse data or use defaults
+    const openInterest = oiData?.openInterest || '0';
+    const fundingRate = fundData?.lastFundingRate || '0';
+    const oiHist = Array.isArray(oiHistData) ? oiHistData : [];
 
     // Determine OI Trend
     let oiTrend: 'UP' | 'DOWN' | 'NEUTRAL' = 'NEUTRAL';
-    if (oiHistData && oiHistData.length >= 2) {
+    if (oiHist && oiHist.length >= 2) {
       const current = parseFloat(oiHistData[1].sumOpenInterest);
       const prev = parseFloat(oiHistData[0].sumOpenInterest);
       if (current > prev * 1.01) oiTrend = 'UP'; // Increase > 1%
