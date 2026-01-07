@@ -179,19 +179,38 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
         </div>
         <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x">
           {alerts.map((alert, i) => (
-            <div key={i} className="snap-start flex-none w-[160px] bg-surface border border-white/5 rounded-xl p-3 flex flex-col gap-3">
+            <div
+              key={i}
+              onClick={() => {
+                // Construct a signal object from alert to navigate
+                const signal: MarketSignal = {
+                  id: alert.pair,
+                  pair: alert.pair,
+                  exchange: 'Binance',
+                  price: 0, // Fallback
+                  change24h: 0,
+                  type: alert.type.includes('Long') ? SignalType.LONG : SignalType.SHORT,
+                  confidence: 90,
+                  timeframe: '1H',
+                  timestamp: alert.time,
+                  summary: 'Tín hiệu từ Alert'
+                };
+                onNavigate('details', signal);
+              }}
+              className="snap-start flex-none w-[160px] bg-surface border border-white/5 rounded-xl p-3 flex flex-col gap-3 cursor-pointer hover:border-primary/50 active:scale-95 transition-all"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-full ${alert.bg} flex items-center justify-center text-[10px] font-bold text-white`}>{alert.icon}</div>
                   <span className="font-bold text-sm">{alert.pair}</span>
                 </div>
-                <span className="text-[10px] text-text-secondary">{alert.time} trước</span>
+                {/* Timeframe hidden as requested */}
               </div>
               <div className={`flex items-center gap-1 text-[11px] font-bold ${alert.color}`}>
                 <span className="material-symbols-outlined text-[16px]">
                   {alert.type.includes('Long') ? 'trending_up' : alert.type.includes('Short') ? 'trending_down' : 'remove_circle_outline'}
                 </span>
-                {alert.type}
+                {alert.type.replace('Entry ', '').replace(' (Buy)', '').replace('Bearish ', '').replace(' (Avoid/Sell)', '')}
               </div>
             </div>
           ))}
