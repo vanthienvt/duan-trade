@@ -25,9 +25,9 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
 
       setLoading(true);
 
-      // If price is missing (from Alert), fetch fresh data
+      // If price is missing (from Alert) or Pro Data is missing (from optimized List), fetch fresh data
       let currentSignal = displaySignal;
-      if (!displaySignal.price || displaySignal.price === 0) {
+      if (!displaySignal.price || displaySignal.price === 0 || displaySignal.openInterest === 'N/A') {
         try {
           const freshData = await getMarketData(displaySignal.pair);
           if (freshData) {
