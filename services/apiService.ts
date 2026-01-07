@@ -70,8 +70,17 @@ export const getRecentAlerts = async (): Promise<any[]> => {
     // Get signals for these symbols using the existing service
     const signals = await generateSignals(alertSymbols);
 
+    // 1. Filter out weak signals (Sit Out)
+    const activeSignals = signals.filter(s => s.type !== SignalType.NEUTRAL);
+
+    // 2. Sort by "Hotness" (Confidence score) -> Highest first
+    const sortedSignals = activeSignals.sort((a, b) => b.confidence - a.confidence);
+
+    // 3. Take Top 10 High Quality Alerts
+    const topAlerts = sortedSignals.slice(0, 10);
+
     // Transform MarketSignal objects into the alert format expected by UI
-    return signals.map(signal => {
+    return topAlerts.map(signal => {
       const baseSymbol = signal.pair.split('/')[0];
 
       let type = 'Sit Out';
