@@ -36,6 +36,11 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
               price: freshData.price,
               change24h: freshData.change24h,
               rsi: freshData.rsi || 50,
+              openInterest: freshData.openInterest,
+              fundingRate: freshData.fundingRate,
+              oiTrend: freshData.oiTrend,
+              support: freshData.support,
+              resistance: freshData.resistance
               // Keep other alert fields like confidence
             };
             setDisplaySignal(currentSignal);
