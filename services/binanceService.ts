@@ -165,77 +165,78 @@ const calculateEMA = (prices: number[], period: number): number => {
   return trendEMA;
 };
 
-// Helper to safely get OI/Funding with Sequential Proxy Fallback (More Robust)
+// Helper to safely get OI/Funding with FASTEST Proxy Race Strategy (v3.0 - Speed & Reliability)
 const getProData = async (symbol: string) => {
   const formatted = symbol.replace('/', '');
   const timestamp = Date.now();
 
-  const fetchWithProxy = async (endpoint: string) => {
-    // 1. Prepare Target URL
+  const createRequest = async (proxyUrl: string, type: 'direct' | 'json_wrapper' = 'direct') => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500); // Fast 3.5s timeout
+
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+
+      const rawData = await res.json();
+      let payload = rawData;
+
+      // Unwrap AllOrigins/JSON wrappers
+      if (type === 'json_wrapper' && rawData.contents) {
+        try {
+          payload = JSON.parse(rawData.contents);
+        } catch {
+          payload = rawData.contents;
+        }
+      }
+
+      // Check for Spot Only Error (-1121)
+      if (payload.code === -1121) {
+        return { isSpotOnly: true };
+      }
+
+      // Validate
+      if (payload && (payload.openInterest || payload.lastFundingRate || Array.isArray(payload))) {
+        return payload;
+      }
+      throw new Error('Invalid Data');
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  const endpointToRequests = (endpoint: string) => {
     const separator = endpoint.includes('?') ? '&' : '?';
     const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${separator}symbol=${formatted}&_t=${timestamp}`;
+    const encodedUrl = encodeURIComponent(targetUrl);
 
-    // 2. Define Proxy Candidates (Ordered by Reliability)
-    // We try them one by one. If one works, we stop.
-    const candidates = [
-      // Method A: CORSProxy.io (Most reliable for Futures API)
-      { url: `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`, type: 'direct' },
-      // Method B: AllOrigins Get (JSON Wrapper)
-      { url: `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, type: 'json_wrapper' },
-      // Fallback: CodeTabs
-      { url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`, type: 'direct' }
+    // RACE CANDIDATES - All run in parallel
+    return [
+      // 1. AllOrigins (JSON) - High Reliability
+      createRequest(`https://api.allorigins.win/get?url=${encodedUrl}`, 'json_wrapper'),
+
+      // 2. CORSProxy.io - Fast
+      createRequest(`https://corsproxy.io/?${encodedUrl}`, 'direct'),
+
+      // 3. CodeTabs - Good Fallback
+      createRequest(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, 'direct'),
+
+      // 4. ThingProxy - Extra Fallback
+      createRequest(`https://thingproxy.freeboard.io/fetch/${targetUrl}`, 'direct')
     ];
-
-    for (const proxy of candidates) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout per try
-
-        const res = await fetch(proxy.url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) continue; // Try next proxy
-
-        const rawData = await res.json();
-        let payload = rawData;
-
-        // Unwrap AllOrigins if needed
-        if (proxy.type === 'json_wrapper' && rawData.contents) {
-          try {
-            payload = JSON.parse(rawData.contents);
-          } catch {
-            payload = rawData.contents;
-          }
-        }
-
-        // Check for "Spot Only" Error (-1121)
-        if (payload.code === -1121) {
-          return { isSpotOnly: true };
-        }
-
-        // Validate content
-        if (payload && (payload.openInterest || payload.lastFundingRate || Array.isArray(payload))) {
-          return payload; // Success!
-        }
-      } catch (e) {
-        console.warn(`Proxy ${proxy.url} failed:`, e);
-        // Continue to next proxy
-      }
-    }
-    return null; // All failed
   };
 
   try {
-    // Sequential fetching for different data points is fine, 
-    // but the Proxies themselves are checked sequentially *within* each call.
-    // We run the 3 data fetches in parallel, each doing its own sequential proxy hunt.
+    // Run 3 data races in parallel
     const [oiData, fundData, oiHistData] = await Promise.all([
-      fetchWithProxy('/openInterest'),
-      fetchWithProxy('/premiumIndex'),
-      fetchWithProxy('/openInterestHist?period=1h&limit=2')
+      Promise.any(endpointToRequests('/openInterest')),
+      Promise.any(endpointToRequests('/premiumIndex')),
+      Promise.any(endpointToRequests('/openInterestHist?period=1h&limit=2'))
     ]);
 
-    // Check for Spot Only flag
+    // Check for Spot Only flag from ANY successful response
     if ((oiData as any)?.isSpotOnly || (fundData as any)?.isSpotOnly) {
       return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
     }
@@ -259,7 +260,8 @@ const getProData = async (symbol: string) => {
       oiTrend
     };
   } catch (e) {
-    console.error('Pro Data Critical Failure:', e);
+    console.warn('Pro Data Race Failed:', e);
+    // Return 0 so it shows "Spot/No Fut" instead of crashing
     return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
   }
 };

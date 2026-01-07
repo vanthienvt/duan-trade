@@ -185,20 +185,23 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
                 <div className="flex flex-col">
                   <span className="text-[9px] text-text-secondary font-bold uppercase tracking-wider">Open Interest</span>
                   <span className="text-xs font-black">{
-                    displaySignal.openInterest && displaySignal.openInterest !== '0' && displaySignal.openInterest !== 'N/A'
-                      ? displaySignal.openInterest
-                      : <span className="text-text-secondary text-[10px] font-bold opacity-70">Spot/No Fut</span>
+                    loading ? <span className="animate-pulse">...</span> :
+                      (displaySignal.openInterest && displaySignal.openInterest !== '0' && displaySignal.openInterest !== 'N/A'
+                        ? displaySignal.openInterest
+                        : <span className="text-text-secondary text-[10px] font-bold opacity-70">Spot/No Fut</span>)
                   }</span>
                 </div>
                 <div className="flex flex-col mt-1">
                   <span className="text-[9px] text-text-secondary font-bold uppercase tracking-wider">Funding</span>
-                  <span className={`text-xs font-black ${displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
-                    ? ((displaySignal.fundingRate.startsWith('-')) ? 'text-bullish' : 'text-bearish')
-                    : 'text-text-secondary'
+                  <span className={`text-xs font-black ${loading ? 'text-text-secondary' :
+                      (displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
+                        ? ((displaySignal.fundingRate.startsWith('-')) ? 'text-bullish' : 'text-bearish')
+                        : 'text-text-secondary')
                     }`}>
-                    {displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
-                      ? displaySignal.fundingRate
-                      : <span className="text-[10px] opacity-70">--</span>
+                    {loading ? <span className="animate-pulse">...</span> :
+                      (displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
+                        ? displaySignal.fundingRate
+                        : <span className="text-[10px] opacity-70">--</span>)
                     }
                   </span>
                 </div>
