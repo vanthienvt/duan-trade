@@ -165,86 +165,74 @@ const calculateEMA = (prices: number[], period: number): number => {
   return trendEMA;
 };
 
-// Helper to safely get OI/Funding with FASTEST Proxy Race Strategy
+// Helper to safely get OI/Funding with Sequential Proxy Fallback (More Robust)
 const getProData = async (symbol: string) => {
   const formatted = symbol.replace('/', '');
   const timestamp = Date.now();
 
-  // 1. Define Request Creators
-  const createRequests = (endpoint: string) => {
-    // Fix: Properly check if endpoint already has query params
+  const fetchWithProxy = async (endpoint: string) => {
+    // 1. Prepare Target URL
     const separator = endpoint.includes('?') ? '&' : '?';
     const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${separator}symbol=${formatted}&_t=${timestamp}`;
 
-    // Proxy Candidates - Expanded & Ordered by reliability
+    // 2. Define Proxy Candidates (Ordered by Reliability)
+    // We try them one by one. If one works, we stop.
     const candidates = [
-      // Method A: AllOrigins Raw (Fastest)
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-      // Method B: CORSProxy.io (Reliable)
-      `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-      // Method C: AllOrigins JSON Wrapper (Fallback if raw blocked)
-      `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
-      // Method D: CodeTabs (Slow but works)
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+      // Top Tier: AllOrigins Get (JSON Wrapper - Good for Browser)
+      { url: `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, type: 'json_wrapper' },
+      // Secondary: CORSProxy.io (Fast but sometimes blocks)
+      { url: `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`, type: 'direct' },
+      // Fallback: CodeTabs (Slow)
+      { url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`, type: 'direct' }
     ];
 
-    return candidates.map(async (url) => {
+    for (const proxy of candidates) {
       try {
-        // Set a timeout for each request to avoid hanging
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout per try
 
-        const res = await fetch(url, { signal: controller.signal });
+        const res = await fetch(proxy.url, { signal: controller.signal });
         clearTimeout(timeoutId);
 
-        if (!res.ok) throw new Error('Status ' + res.status);
-        const data = await res.json();
+        if (!res.ok) continue; // Try next proxy
 
-        // Handle AllOrigins JSON Wrapper (method C)
-        let payload = data;
-        if (data.contents) {
+        const rawData = await res.json();
+        let payload = rawData;
+
+        // Unwrap AllOrigins if needed
+        if (proxy.type === 'json_wrapper' && rawData.contents) {
           try {
-            payload = JSON.parse(data.contents);
-          } catch (e) {
-            payload = data.contents; // Might be already object
+            payload = JSON.parse(rawData.contents);
+          } catch {
+            payload = rawData.contents;
           }
         }
 
-        // Check for specific Binance API Errors
-        // Code -1121: Invalid Symbol (Spot Only coin)
+        // Check for "Spot Only" Error (-1121)
         if (payload.code === -1121) {
           return { isSpotOnly: true };
         }
 
-        // Basic validation check
+        // Validate content
         if (payload && (payload.openInterest || payload.lastFundingRate || Array.isArray(payload))) {
-          return payload;
+          return payload; // Success!
         }
-        throw new Error('Invalid data format');
       } catch (e) {
-        throw e;
+        console.warn(`Proxy ${proxy.url} failed:`, e);
+        // Continue to next proxy
       }
-    });
-  };
-
-  // 2. The Racer: Returns first successful promise
-  const fetchFastest = async (endpoint: string) => {
-    const requests = createRequests(endpoint);
-    try {
-      // Promise.any is ES2021. Polyfill approach:
-      return await Promise.any(requests);
-    } catch (aggregateError) {
-      return null; // All failed
     }
+    return null; // All failed
   };
 
   try {
-    // Remove '?' from call arguments if present to use logic above consistently? 
-    // Actually, logic above handles it.
+    // Sequential fetching for different data points is fine, 
+    // but the Proxies themselves are checked sequentially *within* each call.
+    // We run the 3 data fetches in parallel, each doing its own sequential proxy hunt.
     const [oiData, fundData, oiHistData] = await Promise.all([
-      fetchFastest('/openInterest'),        // Endpoint without params
-      fetchFastest('/premiumIndex'),        // Endpoint without params
-      fetchFastest('/openInterestHist?period=1h&limit=2') // Endpoint WITH params
+      fetchWithProxy('/openInterest'),
+      fetchWithProxy('/premiumIndex'),
+      fetchWithProxy('/openInterestHist?period=1h&limit=2')
     ]);
 
     // Check for Spot Only flag
@@ -271,8 +259,7 @@ const getProData = async (symbol: string) => {
       oiTrend
     };
   } catch (e) {
-    console.error('Pro Data Error (All Proxies Failed):', e);
-    // Fallback: don't return 0 if possible, but 0 is safe numeric
+    console.error('Pro Data Critical Failure:', e);
     return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
   }
 };
