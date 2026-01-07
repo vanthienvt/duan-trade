@@ -567,31 +567,33 @@ const getFundingRate = async (symbol: string): Promise<string> => {
 };
 
 
-// New Function: Scan Top 15 Coins by Volume
+// New Function: Scan Top 50 Coins by Volume (Smart Scan)
 const scanTopMarketCoins = async (): Promise<string[]> => {
   try {
     const response = await fetch(`${BINANCE_API_BASE}/ticker/24hr`);
     const data = await response.json();
 
-    // Filter USDT pairs, exclude stablecoins/leverage tokens
+    // Filter USDT pairs, exclude stablecoins/leverage tokens/old pairs
     const validPairs = data.filter((t: any) =>
       t.symbol.endsWith('USDT') &&
       !t.symbol.includes('UP') &&
       !t.symbol.includes('DOWN') &&
-      !['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT'].includes(t.symbol)
+      !t.symbol.includes('BEAR') &&
+      !t.symbol.includes('BULL') &&
+      !['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT', 'BUSDUSDT', 'USDPUSDT', 'EURUSDT'].includes(t.symbol)
     );
 
-    // Sort by Quote Volume (Liquidity) -> Top 20
+    // Sort by Quote Volume (Liquidity) -> Top 50
     const topCoins = validPairs
       .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
-      .slice(0, 20)
+      .slice(0, 50)
       .map((t: any) => t.symbol);
 
     return topCoins;
   } catch (error) {
     console.error('Scanner Error:', error);
     // Fallback if API fails
-    return ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT'];
+    return ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'SHIBUSDT', 'PEPEUSDT', 'LINKUSDT'];
   }
 };
 

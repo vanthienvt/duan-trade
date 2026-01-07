@@ -60,8 +60,12 @@ export const getMarketData = async (symbol: string) => {
 
 export const getRecentAlerts = async (): Promise<any[]> => {
   try {
-    // List of coins to monitor for alerts (using popular/volatile coins for interesting alerts)
-    const alertSymbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'DOGEUSDT', 'ADAUSDT', 'RENDERUSDT', 'BNBUSDT', 'PEPEUSDT'];
+    // OLD: Linked to hardcoded list -> NEW: Link to Smart Scanner
+    // Get Top Market Candidates (Dynamic)
+    const topCoins = await scanTopMarketCoins();
+
+    // Select top 20 for Alerts to keep performance high
+    const alertSymbols = topCoins.slice(0, 20);
 
     // Get signals for these symbols using the existing service
     const signals = await generateSignals(alertSymbols);
