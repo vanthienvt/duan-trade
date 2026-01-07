@@ -498,8 +498,12 @@ const formatTimestamp = (): string => {
 
 const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
   try {
-    const signals = await Promise.all(
-      symbols.map(async (symbol) => {
+    const BATCH_SIZE = 5; // Process 5 coins at a time to prevent network bottleneck
+    const signals: MarketSignal[] = [];
+
+    for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+      const batch = symbols.slice(i, i + BATCH_SIZE);
+      const batchPromises = batch.map(async (symbol) => {
         try {
           const marketData = await getMarketData(symbol);
           const pair = formatPairName(symbol);
@@ -531,10 +535,14 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
           console.error(`Error generating signal for ${symbol}:`, error);
           return null;
         }
-      })
-    );
+      });
 
-    return signals.filter((signal): signal is MarketSignal => signal !== null);
+      // Wait for current batch to finish before starting next batch
+      const batchResults = await Promise.all(batchPromises);
+      signals.push(...batchResults.filter((s): s is MarketSignal => s !== null));
+    }
+
+    return signals;
   } catch (error) {
     console.error('Error generating signals:', error);
     throw error;
