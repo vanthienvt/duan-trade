@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, MarketSignal } from '../types';
+import { View, MarketSignal, SignalType } from '../types';
 import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
+import { getMarketData } from '../services/apiService';
 
 interface Props {
   signal: MarketSignal | null;
@@ -12,21 +13,57 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
   const [openSections, setOpenSections] = useState<string[]>(['trend', 'ai']);
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [displaySignal, setDisplaySignal] = useState<MarketSignal | null>(signal);
 
   useEffect(() => {
-    if (signal) {
+    setDisplaySignal(signal); // Reset when props change
+  }, [signal]);
+
+  useEffect(() => {
+    const initData = async () => {
+      if (!displaySignal) return;
+
       setLoading(true);
-      getMarketAnalysis(signal.pair).then(result => {
+
+      // If price is missing (from Alert), fetch fresh data
+      let currentSignal = displaySignal;
+      if (!displaySignal.price || displaySignal.price === 0) {
+        try {
+          const freshData = await getMarketData(displaySignal.pair);
+          if (freshData) {
+            currentSignal = {
+              ...displaySignal,
+              price: freshData.price,
+              change24h: freshData.change24h,
+              rsi: freshData.rsi || 50,
+              // Keep other alert fields like confidence
+            };
+            setDisplaySignal(currentSignal);
+          }
+        } catch (e) {
+          console.error("Failed to fetch fresh details", e);
+        }
+      }
+
+      // Now run AI Analysis with valid data
+      getMarketAnalysis(currentSignal.pair, {
+        symbol: currentSignal.pair,
+        price: currentSignal.price,
+        change24h: currentSignal.change24h,
+        rsi: currentSignal.rsi || 50
+      }).then(result => {
         setAiAnalysis(result);
         setLoading(false);
       });
-    }
-  }, [signal]);
+    };
 
-  if (!signal) return null;
+    initData();
+  }, [signal?.id]); // Depend on ID change to re-trigger
+
+  if (!displaySignal) return null;
 
   const toggleSection = (id: string) => {
-    setOpenSections(prev => 
+    setOpenSections(prev =>
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
   };
@@ -35,7 +72,7 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
     const isOpen = openSections.includes(id);
     return (
       <div className="rounded-2xl bg-surface border border-white/5 overflow-hidden transition-all duration-300">
-        <button 
+        <button
           onClick={() => toggleSection(id)}
           className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 transition-colors"
         >
@@ -57,24 +94,24 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
   };
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-500 pb-32">
+    <div className="flex flex-col animate-in fade-in duration-500 pb-40">
       {/* App Bar */}
       <header className="sticky top-0 z-50 flex items-center justify-between bg-background/90 px-4 py-4 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => onNavigate('dashboard')}
             className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/5"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <div>
-            <h1 className="text-base font-black tracking-tight">{signal.pair}</h1>
-            <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{signal.exchange}</span>
+            <h1 className="text-base font-black tracking-tight">{displaySignal.pair}</h1>
+            <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange}</span>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-base font-black leading-tight">${signal.price.toLocaleString()}</p>
-          <p className="text-bullish text-[10px] font-black uppercase tracking-widest">+{signal.change24h}%</p>
+          <p className="text-base font-black leading-tight">${displaySignal.price.toLocaleString()}</p>
+          <p className="text-bullish text-[10px] font-black uppercase tracking-widest">+{displaySignal.change24h}%</p>
         </div>
       </header>
 
@@ -89,7 +126,7 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
           ) : (
             <div className="space-y-4">
               <p className="text-xs font-medium leading-relaxed text-white/90 italic">
-                "{aiAnalysis?.summary || signal.summary}"
+                "{aiAnalysis?.summary || displaySignal.summary}"
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-background rounded-lg p-2 flex items-center gap-2">
@@ -112,18 +149,18 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-text-secondary tracking-widest uppercase">Độ tin cậy AI</span>
               <span className="text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded tracking-widest uppercase">
-                {signal.confidence > 85 ? 'Tín hiệu Vàng' : 'Tiềm năng'}
+                {displaySignal.confidence > 85 ? 'Tín hiệu Vàng' : 'Tiềm năng'}
               </span>
             </div>
             <div className="flex items-end gap-3">
-              <span className="text-6xl font-black tracking-tighter">{signal.confidence}<span className="text-2xl text-white/30">%</span></span>
+              <span className="text-6xl font-black tracking-tighter">{displaySignal.confidence}<span className="text-2xl text-white/30">%</span></span>
               <p className="text-xs text-text-secondary font-medium leading-relaxed max-w-[160px]">
                 Dựa trên phân tích đa khung thời gian & dòng tiền.
               </p>
             </div>
             <div className="space-y-2">
               <div className="h-2.5 w-full rounded-full bg-background overflow-hidden p-0.5 border border-white/5">
-                <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400" style={{ width: `${signal.confidence}%` }}></div>
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400" style={{ width: `${displaySignal.confidence}%` }}></div>
               </div>
             </div>
           </div>
@@ -149,32 +186,32 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
           <div className="space-y-2">
             <div className="flex justify-between text-[11px] font-bold">
               <span className="text-text-secondary">Kháng cự (Resistance)</span>
-              <span className="text-bearish font-mono">${(signal.price * 1.05).toFixed(2)}</span>
+              <span className="text-bearish font-mono">${(displaySignal.price * 1.05).toFixed(2)}</span>
             </div>
             <div className="h-px w-full bg-white/5"></div>
             <div className="flex justify-between text-[11px] font-bold">
               <span className="text-text-secondary">Hỗ trợ (Support)</span>
-              <span className="text-bullish font-mono">${(signal.price * 0.96).toFixed(2)}</span>
+              <span className="text-bullish font-mono">${(displaySignal.price * 0.96).toFixed(2)}</span>
             </div>
           </div>
         </Section>
 
         <Section id="macro" title="Lịch Kinh Tế" icon="calendar_month" color="indigo-500">
-           <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center min-w-[40px]">
-                  <span className="text-[9px] font-bold text-text-secondary uppercase">19:30</span>
-                  <span className="text-xs font-black">Hôm nay</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold">Báo cáo CPI</span>
-                    <span className="px-1.5 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded border border-red-500/20 uppercase">Cao</span>
-                  </div>
-                  <p className="text-[10px] text-text-secondary font-medium italic">Sẽ ảnh hưởng trực tiếp đến biến động của {signal.pair}.</p>
-                </div>
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <div className="flex flex-col items-center min-w-[40px]">
+                <span className="text-[9px] font-bold text-text-secondary uppercase">19:30</span>
+                <span className="text-xs font-black">Hôm nay</span>
               </div>
-           </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold">Báo cáo CPI</span>
+                  <span className="px-1.5 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded border border-red-500/20 uppercase">Cao</span>
+                </div>
+                <p className="text-[10px] text-text-secondary font-medium italic">Sẽ ảnh hưởng trực tiếp đến biến động của {displaySignal.pair}.</p>
+              </div>
+            </div>
+          </div>
         </Section>
 
         <div className="mt-8 p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
@@ -185,14 +222,14 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
       </main>
 
       <footer className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-xl border-t border-white/5 z-50 flex gap-3 max-w-md mx-auto safe-bottom">
-        <button 
+        <button
           onClick={() => onNavigate('dashboard')}
           className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl bg-surface hover:bg-white/5 font-bold text-sm transition-all active:scale-95 border border-white/5"
         >
           <span>Hủy bỏ</span>
         </button>
-        <button 
-          onClick={() => onNavigate('setup', signal)}
+        <button
+          onClick={() => onNavigate('setup', displaySignal)}
           className="flex-[2] flex items-center justify-center gap-2 h-14 rounded-2xl bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 font-black text-sm transition-all active:scale-95"
         >
           Xem Thiết Lập Lệnh

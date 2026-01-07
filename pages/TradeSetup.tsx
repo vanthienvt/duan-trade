@@ -17,7 +17,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
   // Uses utils.formatPrice
 
   return (
-    <div className="flex flex-col animate-in slide-in-from-bottom duration-500 pb-32">
+    <div className="flex flex-col animate-in slide-in-from-bottom duration-500 pb-40">
       <header className="sticky top-0 z-50 flex items-center justify-between bg-background/90 px-4 py-4 backdrop-blur-md border-b border-white/5">
         <button onClick={() => onNavigate('signals')} className="h-10 w-10 flex items-center justify-center rounded-full">
           <span className="material-symbols-outlined">arrow_back</span>
