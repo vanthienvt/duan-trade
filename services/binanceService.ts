@@ -178,18 +178,18 @@ const getProData = async (symbol: string) => {
     // 2. Define Proxy Candidates (Ordered by Reliability)
     // We try them one by one. If one works, we stop.
     const candidates = [
-      // Top Tier: AllOrigins Get (JSON Wrapper - Good for Browser)
-      { url: `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, type: 'json_wrapper' },
-      // Secondary: CORSProxy.io (Fast but sometimes blocks)
+      // Method A: CORSProxy.io (Most reliable for Futures API)
       { url: `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`, type: 'direct' },
-      // Fallback: CodeTabs (Slow)
+      // Method B: AllOrigins Get (JSON Wrapper)
+      { url: `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, type: 'json_wrapper' },
+      // Fallback: CodeTabs
       { url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`, type: 'direct' }
     ];
 
     for (const proxy of candidates) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout per try
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout per try
 
         const res = await fetch(proxy.url, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -288,10 +288,15 @@ const calculateTechnicalIndicators = async (symbol: string, skipProData: boolean
     let oiTrend: 'UP' | 'DOWN' | 'NEUTRAL' = 'NEUTRAL';
 
     if (!skipProData) {
-      const proData = await getProData(symbol);
-      openInterest = (proData.openInterest).toLocaleString();
-      fundingRate = (proData.fundingRate * 100).toFixed(4) + '%';
-      oiTrend = proData.oiTrend;
+      try {
+        const proData = await getProData(symbol);
+        openInterest = (proData.openInterest).toLocaleString();
+        fundingRate = (proData.fundingRate * 100).toFixed(4) + '%';
+        oiTrend = proData.oiTrend;
+      } catch (safeErr) {
+        console.error("Safeguard: ProData fetch failed, continuing with defaults", safeErr);
+        // Defaults are already set to N/A, 0.0000%
+      }
     }
 
     return {

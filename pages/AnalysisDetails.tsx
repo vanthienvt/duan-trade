@@ -150,6 +150,26 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
         {/* AI Score Card */}
         <div className="rounded-3xl bg-gradient-to-br from-surface to-background p-6 shadow-2xl border border-white/5 relative overflow-hidden group">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+
+          {/* Debug/Refresh Button v2.0 */}
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!confirm('Force fetch fresh data?')) return;
+              try {
+                const fresh = await getMarketData(displaySignal.pair);
+                alert(`DEBUG Result for ${displaySignal.pair}:\nOI: ${fresh.openInterest}\nFunding: ${fresh.fundingRate}\nTrend: ${fresh.oiTrend}`);
+                window.location.reload();
+              } catch (err) {
+                alert('DEBUG Error: ' + err);
+              }
+            }}
+            className="absolute top-2 right-2 z-50 p-1.5 rounded-full bg-black/20 hover:bg-black/40 text-white/30 hover:text-white transition-colors cursor-pointer"
+            title="Force Refresh Data (v2.0)"
+          >
+            <span className="material-symbols-outlined text-[12px]">refresh</span>
+          </button>
+
           <div className="flex flex-col gap-5 relative z-10">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-text-secondary tracking-widest uppercase">Độ tin cậy AI</span>
@@ -173,8 +193,8 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
                 <div className="flex flex-col mt-1">
                   <span className="text-[9px] text-text-secondary font-bold uppercase tracking-wider">Funding</span>
                   <span className={`text-xs font-black ${displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
-                      ? ((displaySignal.fundingRate.startsWith('-')) ? 'text-bullish' : 'text-bearish')
-                      : 'text-text-secondary'
+                    ? ((displaySignal.fundingRate.startsWith('-')) ? 'text-bullish' : 'text-bearish')
+                    : 'text-text-secondary'
                     }`}>
                     {displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
                       ? displaySignal.fundingRate
