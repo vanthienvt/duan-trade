@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, SignalType, MarketSignal } from '../types';
-import { getDashboardSignal, getRecentAlerts, getFearAndGreedIndex } from '../services/apiService';
+import { getDashboardSignal, getRecentAlerts, getFearAndGreedIndex, getMarketData } from '../services/apiService';
 import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
 import { getBTCContext } from '../services/binanceService';
 
@@ -45,9 +45,32 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
         setSignal(data);
         setHasError(false);
 
+        // HYDRATION START: Fetch heavy Pro Data (OI/Funding) separately
+        // This keeps the initial load instant, then updates details ~1s later
+        if (data.id !== 'fallback') {
+          getMarketData(data.pair).then((fullData: any) => { // Use 'any' or proper type if imported
+            if (fullData) {
+              setSignal(prev => {
+                if (!prev || prev.id !== data.id) return prev;
+                return {
+                  ...prev,
+                  openInterest: fullData.openInterest,
+                  fundingRate: fullData.fundingRate,
+                  oiTrend: fullData.oiTrend,
+                  support: fullData.support,
+                  resistance: fullData.resistance
+                };
+              });
+            }
+          }).catch(err => console.error("Hydration failed", err));
+        }
+        // HYDRATION END
+
         // 10-Part System: Fetch Global Context First
         if (data.id !== 'fallback') {
           setIsAnalyzing(true);
+
+          // ... rest of AI analysis logic ...
 
           // Fetch Context in parallel
           const [btcContext, sentiment] = await Promise.all([
