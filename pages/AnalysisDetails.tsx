@@ -159,10 +159,36 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
             </div>
             <div className="flex items-end gap-3">
               <span className="text-6xl font-black tracking-tighter">{displaySignal.confidence}<span className="text-2xl text-white/30">%</span></span>
-              <p className="text-xs text-text-secondary font-medium leading-relaxed max-w-[160px]">
-                Dựa trên phân tích đa khung thời gian & dòng tiền.
-              </p>
+
+              {/* Context Info (OI & Funding) */}
+              <div className="flex flex-col gap-1 ml-auto text-right">
+                <div className="flex flex-col">
+                  <span className="text-[9px] text-text-secondary font-bold uppercase tracking-wider">Open Interest</span>
+                  <span className="text-xs font-black">{
+                    displaySignal.openInterest && displaySignal.openInterest !== '0' && displaySignal.openInterest !== 'N/A'
+                      ? displaySignal.openInterest
+                      : <span className="text-text-secondary text-[10px] font-bold opacity-70">Spot/No Fut</span>
+                  }</span>
+                </div>
+                <div className="flex flex-col mt-1">
+                  <span className="text-[9px] text-text-secondary font-bold uppercase tracking-wider">Funding</span>
+                  <span className={`text-xs font-black ${displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
+                      ? ((displaySignal.fundingRate.startsWith('-')) ? 'text-bullish' : 'text-bearish')
+                      : 'text-text-secondary'
+                    }`}>
+                    {displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
+                      ? displaySignal.fundingRate
+                      : <span className="text-[10px] opacity-70">--</span>
+                    }
+                  </span>
+                </div>
+              </div>
             </div>
+
+            <p className="text-xs text-text-secondary font-medium leading-relaxed max-w-full">
+              Dựa trên phân tích đa khung thời gian & dòng tiền.
+            </p>
+
             <div className="space-y-2">
               <div className="h-2.5 w-full rounded-full bg-background overflow-hidden p-0.5 border border-white/5">
                 <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400" style={{ width: `${displaySignal.confidence}%` }}></div>

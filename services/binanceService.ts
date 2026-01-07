@@ -192,7 +192,7 @@ const getProData = async (symbol: string) => {
       try {
         // Set a timeout for each request to avoid hanging
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // Increased timeout to 6s
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
 
         const res = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -201,17 +201,24 @@ const getProData = async (symbol: string) => {
         const data = await res.json();
 
         // Handle AllOrigins JSON Wrapper (method C)
+        let payload = data;
         if (data.contents) {
           try {
-            return JSON.parse(data.contents);
+            payload = JSON.parse(data.contents);
           } catch (e) {
-            return data.contents; // Might be already object
+            payload = data.contents; // Might be already object
           }
         }
 
+        // Check for specific Binance API Errors
+        // Code -1121: Invalid Symbol (Spot Only coin)
+        if (payload.code === -1121) {
+          return { isSpotOnly: true };
+        }
+
         // Basic validation check
-        if (data && (data.openInterest || data.lastFundingRate || Array.isArray(data))) {
-          return data;
+        if (payload && (payload.openInterest || payload.lastFundingRate || Array.isArray(payload))) {
+          return payload;
         }
         throw new Error('Invalid data format');
       } catch (e) {
@@ -239,6 +246,11 @@ const getProData = async (symbol: string) => {
       fetchFastest('/premiumIndex'),        // Endpoint without params
       fetchFastest('/openInterestHist?period=1h&limit=2') // Endpoint WITH params
     ]);
+
+    // Check for Spot Only flag
+    if ((oiData as any)?.isSpotOnly || (fundData as any)?.isSpotOnly) {
+      return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
+    }
 
     const openInterest = oiData?.openInterest || '0';
     const fundingRate = fundData?.lastFundingRate || '0';
