@@ -186,12 +186,20 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
           <div className="space-y-2">
             <div className="flex justify-between text-[11px] font-bold">
               <span className="text-text-secondary">Kháng cự (Resistance)</span>
-              <span className="text-bearish font-mono">${(displaySignal.price * 1.05).toFixed(2)}</span>
+              {displaySignal.price > 0 ? (
+                <span className="text-bearish font-mono">${(displaySignal.price * 1.05).toFixed(2)}</span>
+              ) : (
+                <span className="text-text-secondary animate-pulse">Đang tính...</span>
+              )}
             </div>
             <div className="h-px w-full bg-white/5"></div>
             <div className="flex justify-between text-[11px] font-bold">
               <span className="text-text-secondary">Hỗ trợ (Support)</span>
-              <span className="text-bullish font-mono">${(displaySignal.price * 0.96).toFixed(2)}</span>
+              {displaySignal.price > 0 ? (
+                <span className="text-bullish font-mono">${(displaySignal.price * 0.96).toFixed(2)}</span>
+              ) : (
+                <span className="text-text-secondary animate-pulse">Đang tính...</span>
+              )}
             </div>
           </div>
         </Section>
