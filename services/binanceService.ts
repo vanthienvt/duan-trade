@@ -170,35 +170,21 @@ const getProData = async (symbol: string) => {
   const formatted = symbol.replace('/', '');
   const timestamp = Date.now();
 
-  // Custom Promise.any implementation for broad compatibility
-  const raceSuccess = (promises: Promise<any>[]) => {
-    return Promise.all(
-      promises.map(p => {
-        // Init a promise that resolves on success, but rejects on failure 
-        // to allow Promise.all to wait, effectively implementing "first success" via inversion?
-        // Actually, a simple race wrapper is better:
-        return p.then(
-          val => Promise.reject(val), // If success, reject wrapping promise to catch it early? 
-          // No, that's messy. Let's use a standard "First Success" loop or helper.
-          err => Promise.resolve(null) // Converting errors to null for checking
-        );
-      })
-    ).then(
-      () => null, // If all resolved to null (meaning all failed original p), return null
-      val => val // If one "rejected" (meaning succeeded), we catch it here? No.
-    );
-    // Let's stick to a simpler async loop that fires all but handles results smartly
-    // ensuring we pick the first *valid* one.
-  };
-
   // 1. Define Request Creators
   const createRequests = (endpoint: string) => {
-    const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}&symbol=${formatted}&_t=${timestamp}`;
+    // Fix: Properly check if endpoint already has query params
+    const separator = endpoint.includes('?') ? '&' : '?';
+    const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${separator}symbol=${formatted}&_t=${timestamp}`;
 
-    // Proxy Candidates - Ordered by usual speed
+    // Proxy Candidates - Expanded & Ordered by reliability
     const candidates = [
-      `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+      // Method A: AllOrigins Raw (Fastest)
       `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+      // Method B: CORSProxy.io (Reliable)
+      `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+      // Method C: AllOrigins JSON Wrapper (Fallback if raw blocked)
+      `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+      // Method D: CodeTabs (Slow but works)
       `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
     ];
 
@@ -206,18 +192,28 @@ const getProData = async (symbol: string) => {
       try {
         // Set a timeout for each request to avoid hanging
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // Increased timeout to 6s
 
         const res = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (!res.ok) throw new Error('Status ' + res.status);
         const data = await res.json();
-        // Basic validation check
-        if (data && (data.contents || data.openInterest || data.lastFundingRate || Array.isArray(data))) {
-          return data.contents ? JSON.parse(data.contents) : data; // Handle AllOrigins JSON wrapper if used, or plain JSON
+
+        // Handle AllOrigins JSON Wrapper (method C)
+        if (data.contents) {
+          try {
+            return JSON.parse(data.contents);
+          } catch (e) {
+            return data.contents; // Might be already object
+          }
         }
-        throw new Error('Invalid data');
+
+        // Basic validation check
+        if (data && (data.openInterest || data.lastFundingRate || Array.isArray(data))) {
+          return data;
+        }
+        throw new Error('Invalid data format');
       } catch (e) {
         throw e;
       }
@@ -236,10 +232,12 @@ const getProData = async (symbol: string) => {
   };
 
   try {
+    // Remove '?' from call arguments if present to use logic above consistently? 
+    // Actually, logic above handles it.
     const [oiData, fundData, oiHistData] = await Promise.all([
-      fetchFastest('/openInterest?'),
-      fetchFastest('/premiumIndex?'),
-      fetchFastest('/openInterestHist?period=1h&limit=2')
+      fetchFastest('/openInterest'),        // Endpoint without params
+      fetchFastest('/premiumIndex'),        // Endpoint without params
+      fetchFastest('/openInterestHist?period=1h&limit=2') // Endpoint WITH params
     ]);
 
     const openInterest = oiData?.openInterest || '0';
@@ -262,6 +260,7 @@ const getProData = async (symbol: string) => {
     };
   } catch (e) {
     console.error('Pro Data Error (All Proxies Failed):', e);
+    // Fallback: don't return 0 if possible, but 0 is safe numeric
     return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
   }
 };
