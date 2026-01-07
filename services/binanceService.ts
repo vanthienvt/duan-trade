@@ -252,7 +252,7 @@ const getProData = async (symbol: string) => {
 };
 
 
-const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIndicators> => {
+const calculateTechnicalIndicators = async (symbol: string, skipProData: boolean = false): Promise<TechnicalIndicators> => {
   try {
     const klines1h = await getKlineData(symbol, '1h', 50);
     const klines4h = await getKlineData(symbol, '4h', 50);
@@ -268,8 +268,18 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
     const avgVolume = klines1h.slice(-20).reduce((sum, k) => sum + k.volume, 0) / 20;
     const volumeRatio = volume / avgVolume;
 
-    // Fetch Pro Data
-    const { openInterest, fundingRate, oiTrend } = await getProData(symbol);
+    // Fetch Pro Data (OI & Funding) - ONLY if requested
+    // Skipping this saves ~3s per coin and prevents proxy rate limits
+    let openInterest = 'N/A';
+    let fundingRate = '0.0000%';
+    let oiTrend: 'UP' | 'DOWN' | 'NEUTRAL' = 'NEUTRAL';
+
+    if (!skipProData) {
+      const proData = await getProData(symbol);
+      openInterest = (proData.openInterest).toLocaleString();
+      fundingRate = (proData.fundingRate * 100).toFixed(4) + '%';
+      oiTrend = proData.oiTrend;
+    }
 
     return {
       rsi: Math.round(rsi14),
@@ -277,9 +287,9 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
       ma50,
       currentPrice,
       volumeRatio: parseFloat(volumeRatio.toFixed(2)),
-      openInterest: (openInterest).toLocaleString(),
+      openInterest,
       oiTrend,
-      fundingRate: (fundingRate * 100).toFixed(4) + '%',
+      fundingRate,
       support: currentPrice * 0.96,
       resistance: currentPrice * 1.05
     };
@@ -300,10 +310,10 @@ const calculateTechnicalIndicators = async (symbol: string): Promise<TechnicalIn
   }
 };
 
-const getMarketData = async (symbol: string): Promise<MarketData> => {
+const getMarketData = async (symbol: string, skipProData: boolean = false): Promise<MarketData> => {
   try {
     const ticker = await getTickerData(symbol);
-    const indicators = await calculateTechnicalIndicators(symbol);
+    const indicators = await calculateTechnicalIndicators(symbol, skipProData);
 
     return {
       ...ticker,
@@ -315,186 +325,8 @@ const getMarketData = async (symbol: string): Promise<MarketData> => {
     throw error;
   }
 }
-const getBTCContext = async () => {
-  try {
-    const klines4h = await getKlineData('BTCUSDT', '4h', 200);
-    const klines1d = await getKlineData('BTCUSDT', '1d', 50);
 
-    const closes4h = klines4h.map(k => k.close);
-    const closes1d = klines1d.map(k => k.close);
-    const currentPrice = closes4h[closes4h.length - 1];
-
-    const ema20_4h = calculateEMA(closes4h, 20);
-    const ema50_4h = calculateEMA(closes4h, 50);
-    const ema200_4h = calculateEMA(closes4h, 200);
-
-    const trend = {
-      price: currentPrice,
-      ema20_4h,
-      ema50_4h,
-      ema200_4h,
-      rsi_4h: calculateRSI(closes4h, 14),
-      trend_4h: currentPrice > ema200_4h ? 'UP' : 'DOWN',
-      momentum: currentPrice > ema20_4h ? 'STRONG' : 'WEAK'
-    };
-
-    return trend;
-  } catch (error) {
-    console.error('Error fetching BTC context:', error);
-    return null;
-  }
-};
-
-const formatPairName = (symbol: string): string => {
-  const base = symbol.replace('USDT', '');
-  return `${base}/USDT`;
-};
-
-const determineSignalType = (indicators: TechnicalIndicators, change24h: number): SignalType => {
-  const { rsi, currentPrice, ma20, volumeRatio } = indicators;
-
-  // More sensitive conditions
-  const isBullish =
-    (rsi < 65 && rsi > 40 && currentPrice > ma20) || // Trend following
-    (rsi < 30 && volumeRatio > 1.5); // Oversold rejection
-
-  const isBearish =
-    (rsi > 35 && rsi < 60 && currentPrice < ma20) || // Trend following
-    (rsi > 70 && volumeRatio > 1.5); // Overbought rejection
-
-  if (isBullish) return SignalType.LONG;
-  if (isBearish) return SignalType.SHORT;
-  return SignalType.NEUTRAL;
-};
-
-
-const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: SignalType, change24h: number): { score: number, reasons: string[] } => {
-  let score = 0;
-  const reasons: string[] = [];
-  const { rsi, currentPrice, ma20, ma50, volumeRatio, fundingRate, oiTrend } = indicators;
-
-  const fRate = parseFloat(fundingRate.replace('%', ''));
-
-  // 1. Trend Alignment
-  if (signalType === SignalType.LONG) {
-    if (currentPrice > ma50) {
-      score += 1.5;
-      reasons.push(`Xu hướng giá tăng ổn định`);
-    }
-    if (ma20 > ma50) {
-      score += 1.0;
-      reasons.push(`Lực mua đang áp đảo`);
-    }
-  } else if (signalType === SignalType.SHORT) {
-    if (currentPrice < ma50) {
-      score += 1.5;
-      reasons.push(`Xu hướng giá giảm`);
-    }
-    if (ma20 < ma50) {
-      score += 1.0;
-      reasons.push(`Áp lực bán mạnh`);
-    }
-  }
-
-  // 2. Momentum (RSI) - Add granular score based on exact RSI value
-  if (signalType === SignalType.LONG) {
-    if (rsi > 40 && rsi < 65) {
-      score += 1.0 + (rsi % 10) / 20; // Variance
-      reasons.push(`Động lượng tốt`);
-    } else if (rsi < 30) {
-      score += 1.5;
-      reasons.push(`Vùng quá bán (lực bật đáy)`);
-    }
-  } else if (signalType === SignalType.SHORT) {
-    if (rsi < 60 && rsi > 35) {
-      score += 1.0 + (rsi % 10) / 20; // Variance
-      reasons.push(`Động lượng giảm`);
-    } else if (rsi > 70) {
-      score += 1.5;
-      reasons.push(`Vùng quá mua (sắp chỉnh)`);
-    }
-  }
-
-  // 3. Pro Indicators (OI & Funding)
-  // Logic: Price Trend + OI Up = Strong Trend. Price Trend + OI Down = Weak Trend.
-
-  if (oiTrend === 'UP') {
-    score += 1.0;
-    reasons.push('Dòng tiền mở (OI) tăng mạnh');
-  } else if (oiTrend === 'DOWN') {
-    // No penalty, just no boost. Or maybe small penalty if this was supposed to be a breakout.
-  }
-
-  // Funding Rate Penalty/Boost
-  if (Math.abs(fRate) > 0.05) {
-    if ((signalType === SignalType.LONG && fRate < 0) || (signalType === SignalType.SHORT && fRate > 0)) {
-      score += 0.5; // Funding favors trade
-      reasons.push('Funding ủng hộ');
-    } else {
-      score -= 0.5; // Crowded trade (reduced penalty)
-    }
-  }
-
-  // 4. Volume
-  if (volumeRatio > 1.2) {
-    score += 1.0 + Math.min(volumeRatio / 5, 0.5); // Variance
-    reasons.push(`Dòng tiền vào mạnh`);
-  }
-
-  // 4. Strong Move
-  if (Math.abs(change24h) > 2.0) {
-    score += 0.5;
-    // Don't add text, keep it simple
-  }
-
-  return { score, reasons };
-};
-
-const calculateConfidence = (indicators: TechnicalIndicators, change24h: number, signalType: SignalType): number => {
-  const { score } = calculateConfluenceScore(indicators, signalType, change24h);
-
-  // Map Score to %
-  // Max score is around 7-8. 
-  // We want realistic confidence: 50-85%. Very rarely >90%.
-
-  let baseConfidence = 50;
-  baseConfidence += (score * 5); // Each point = 5%
-
-  // Cap at 88% unless truly exceptional
-  const maxCap = score > 6.5 ? 92 : 85;
-
-  // Add small noise
-  const noise = (indicators.rsi * 10) % 3;
-
-  return Math.min(maxCap, Math.round(baseConfidence + noise));
-};
-
-const generateSummary = (signalType: SignalType, indicators: TechnicalIndicators, change24h: number): string => {
-  const { reasons } = calculateConfluenceScore(indicators, signalType, change24h);
-
-  if (reasons.length === 0) return 'Thị trường đi ngang, chờ tín hiệu rõ ràng.';
-
-  // Return a concise sentence
-  // e.g. "Xu hướng giá tăng ổn định. Động lượng tốt."
-  // Limit to 2 sentences max
-  return reasons.slice(0, 2).join('. ') + '.';
-};
-
-const getTimeframe = (volumeRatio: number): string => {
-  // Higher volume = Lower timeframe reaction needed
-  if (volumeRatio > 3.0) return '15m (Scalp)';
-  if (volumeRatio > 1.5) return '1H (Intraday)';
-  return '4H (Swing)';
-};
-
-const formatTimestamp = (): string => {
-  const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const displayHours = hours % 12 || 12;
-  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-};
+// ... existing code ...
 
 const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
   try {
@@ -505,7 +337,8 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
       const batch = symbols.slice(i, i + BATCH_SIZE);
       const batchPromises = batch.map(async (symbol) => {
         try {
-          const marketData = await getMarketData(symbol);
+          // Skip Pro Data (OI/Funding) for List View -> MASSIVE SPEEDUP
+          const marketData = await getMarketData(symbol, true);
           const pair = formatPairName(symbol);
 
           const signalType = determineSignalType(marketData, marketData.change24h);
