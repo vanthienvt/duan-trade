@@ -138,7 +138,7 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
     <div className="flex flex-col w-full animate-in fade-in duration-500">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-white/5">
-        <h2 className="text-xl font-extrabold tracking-tight">Phân Tích Tổng Quan</h2>
+        <h2 className="text-xl font-extrabold tracking-tight">Phân Tích Tổng Quan <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-black align-middle ml-2">v2.5</span></h2>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowGuide(true)}

@@ -118,7 +118,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
     <div className="flex flex-col animate-in slide-in-from-right duration-300">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md px-4 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold">Tín Hiệu AI</h1>
+          <h1 className="text-xl font-extrabold">Tín Hiệu AI <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-black align-middle ml-2">v2.5</span></h1>
           <p className="text-xs text-text-secondary font-medium">Bản đồ BTC: <span className={btcTrend === 'UP' ? 'text-bullish' : 'text-bearish'}>{btcTrend}</span></p>
         </div>
         <button
