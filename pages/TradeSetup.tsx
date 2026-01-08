@@ -85,7 +85,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
         </button>
         <div className="text-center">
           <h2 className="text-base font-black tracking-tight">{displaySignal.pair}</h2>
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.3 Fix</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.4 OI</span>
         </div>
         <button
           onClick={() => setShowHealth(true)}
@@ -139,10 +139,17 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
                 <p className="text-[9px] text-text-secondary uppercase font-bold">Open Interest</p>
                 <div className="flex items-center gap-2">
                   <p className="text-xs font-black text-white">{displaySignal.openInterest || 'N/A'}</p>
-                  {displaySignal.oiTrend && displaySignal.oiTrend !== 'NEUTRAL' && (
-                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${displaySignal.oiTrend === 'UP' ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
-                      <span>{displaySignal.oiTrend === 'UP' ? 'Tăng' : 'Giảm'}</span>
-                      <span className="material-symbols-outlined text-[10px]">{displaySignal.oiTrend === 'UP' ? 'trending_up' : 'trending_down'}</span>
+                  {displaySignal.oiTrend && (
+                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${displaySignal.oiTrend === 'UP' ? 'bg-bullish/20 text-bullish' :
+                      displaySignal.oiTrend === 'DOWN' ? 'bg-bearish/20 text-bearish' :
+                        'bg-white/10 text-text-secondary'
+                      }`}>
+                      <span>{displaySignal.oiTrend === 'UP' ? 'Tăng' : displaySignal.oiTrend === 'DOWN' ? 'Giảm' : 'Đi ngang'}</span>
+                      <span className="material-symbols-outlined text-[10px]">{
+                        displaySignal.oiTrend === 'UP' ? 'trending_up' :
+                          displaySignal.oiTrend === 'DOWN' ? 'trending_down' :
+                            'remove'
+                      }</span>
                     </div>
                   )}
                 </div>
