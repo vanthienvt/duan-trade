@@ -84,7 +84,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
         </button>
         <div className="text-center">
           <h2 className="text-base font-black tracking-tight">{displaySignal.pair}</h2>
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.2</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.3 Fix</span>
         </div>
         <button
           onClick={() => setShowHealth(true)}
@@ -97,17 +97,15 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
       <div className="flex flex-col items-center pt-8 pb-6 px-4">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">
-            {signal.pair[0]}
+            {displaySignal.pair[0]}
           </div>
-          <h1 className="text-5xl font-black tracking-tighter">${formatPrice(signal.price)}</h1>
+          <h1 className="text-5xl font-black tracking-tighter">${formatPrice(displaySignal.price)}</h1>
         </div>
         <div className="flex items-center gap-2 bg-bullish/10 px-4 py-1.5 rounded-full border border-bullish/20">
           <span className="material-symbols-outlined text-bullish text-[20px]">trending_up</span>
-          <p className="text-bullish text-xs font-black uppercase tracking-widest">+{signal.change24h}% (24h)</p>
+          <p className="text-bullish text-xs font-black uppercase tracking-widest">+{displaySignal.change24h}% (24h)</p>
         </div>
       </div>
-
-
 
       <div className="px-4 space-y-6">
         <div className="bg-surface rounded-2xl p-5 border border-white/5 shadow-2xl">
@@ -116,34 +114,34 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
               <span className="material-symbols-outlined text-primary">psychology</span>
               <h3 className="font-black text-sm uppercase tracking-wider">Phân tích AI</h3>
             </div>
-            <span className={`px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-[0.2em] ${signal.type === SignalType.LONG ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
-              {signal.type === SignalType.LONG ? 'STRONG BUY' : 'STRONG SELL'}
+            <span className={`px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-[0.2em] ${displaySignal.type === SignalType.LONG ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
+              {displaySignal.type === SignalType.LONG ? 'STRONG BUY' : 'STRONG SELL'}
             </span>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between text-xs font-bold">
               <span className="text-text-secondary uppercase">Độ mạnh xu hướng</span>
-              <span className="text-white">{signal.confidence}% {signal.type === SignalType.LONG ? 'Tăng' : 'Giảm'}</span>
+              <span className="text-white">{displaySignal.confidence}% {displaySignal.type === SignalType.LONG ? 'Tăng' : 'Giảm'}</span>
             </div>
             <div className="h-2 w-full bg-background rounded-full overflow-hidden">
               <div
-                className={`h-full bg-gradient-to-r ${signal.type === SignalType.LONG ? 'from-blue-500 to-bullish' : 'from-orange-500 to-bearish'}`}
-                style={{ width: `${signal.confidence}%` }}>
+                className={`h-full bg-gradient-to-r ${displaySignal.type === SignalType.LONG ? 'from-blue-500 to-bullish' : 'from-orange-500 to-bearish'}`}
+                style={{ width: `${displaySignal.confidence}%` }}>
               </div>
             </div>
             <p className="text-[11px] text-text-secondary font-medium leading-relaxed italic opacity-80">
-              {signal.summary}
+              {displaySignal.summary}
             </p>
             {/* Pro Indicators Display */}
             <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/5">
               <div className="bg-background/40 rounded-lg p-2 border border-white/5">
                 <p className="text-[9px] text-text-secondary uppercase font-bold">Open Interest</p>
-                <p className="text-xs font-black text-white">{signal.openInterest || 'N/A'}</p>
+                <p className="text-xs font-black text-white">{displaySignal.openInterest || 'N/A'}</p>
               </div>
               <div className="bg-background/40 rounded-lg p-2 border border-white/5">
                 <p className="text-[9px] text-text-secondary uppercase font-bold">Funding Rate</p>
-                <p className={`text-xs font-black ${parseFloat(signal.fundingRate || '0') > 0.01 ? 'text-bearish' : 'text-bullish'}`}>
-                  {signal.fundingRate || '0.00%'}
+                <p className={`text-xs font-black ${parseFloat(displaySignal.fundingRate || '0') > 0.01 ? 'text-bearish' : 'text-bullish'}`}>
+                  {displaySignal.fundingRate || '0.00%'}
                 </p>
               </div>
             </div>
@@ -158,9 +156,9 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
             <div className="relative z-10">
               <span className="text-[10px] font-black uppercase text-primary tracking-widest mb-2 block">Vùng Mua (Sniper Entry)</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black">${formatPrice(signal.price * 0.98)}</span>
+                <span className="text-2xl font-black">${formatPrice(displaySignal.price * 0.98)}</span>
                 <span className="text-text-secondary font-black">-</span>
-                <span className="text-2xl font-black">${formatPrice(signal.price * 0.995)}</span>
+                <span className="text-2xl font-black">${formatPrice(displaySignal.price * 0.995)}</span>
               </div>
               <p className="text-[10px] text-text-secondary mt-2 font-bold uppercase tracking-wider">Vùng giá tối ưu để vào lệnh với rủi ro thấp nhất.</p>
             </div>
@@ -170,7 +168,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
             <span className="material-symbols-outlined absolute -top-4 -right-4 text-7xl opacity-5">do_not_disturb</span>
             <div className="relative z-10">
               <span className="text-[10px] font-black uppercase text-warning tracking-widest mb-2 block">Vùng Nguy Hiểm (Danger Zone)</span>
-              <span className="text-xl font-black">Trên ${formatPrice(signal.price * 1.05)}</span>
+              <span className="text-xl font-black">Trên ${formatPrice(displaySignal.price * 1.05)}</span>
               <p className="text-[10px] text-text-secondary mt-2 font-bold uppercase tracking-wider">Không nên FOMO mua đuổi tại mức giá này.</p>
             </div>
           </div>
@@ -179,10 +177,10 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
         <h3 className="font-black text-lg px-1 tracking-tighter pt-4">Mục Tiêu & Rủi Ro</h3>
         <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden divide-y divide-white/5">
           {[
-            { label: 'TP 1 (Ngắn hạn)', target: formatPrice(signal.price * 1.08), p: '+8.0%', color: 'text-bullish', icon: '1' },
-            { label: 'TP 2 (Swing)', target: formatPrice(signal.price * 1.15), p: '+15.2%', color: 'text-bullish', icon: '2' },
-            { label: 'TP 3 (Moonbag)', target: formatPrice(signal.price * 1.30), p: '+30.0%', color: 'text-bullish', icon: 'rocket_launch' },
-            { label: 'Cắt Lỗ (Stop Loss)', target: formatPrice(signal.price * 0.95), p: '-5.0%', color: 'text-bearish', icon: 'shield' }
+            { label: 'TP 1 (Ngắn hạn)', target: formatPrice(displaySignal.price * 1.08), p: '+8.0%', color: 'text-bullish', icon: '1' },
+            { label: 'TP 2 (Swing)', target: formatPrice(displaySignal.price * 1.15), p: '+15.2%', color: 'text-bullish', icon: '2' },
+            { label: 'TP 3 (Moonbag)', target: formatPrice(displaySignal.price * 1.30), p: '+30.0%', color: 'text-bullish', icon: 'rocket_launch' },
+            { label: 'Cắt Lỗ (Stop Loss)', target: formatPrice(displaySignal.price * 0.95), p: '-5.0%', color: 'text-bearish', icon: 'shield' }
           ].map((item, i) => (
             <div key={i} className={`flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/5' : ''}`}>
               <div className="flex items-center gap-4">
