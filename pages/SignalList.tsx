@@ -44,12 +44,27 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
           const alertKey = `${signal.pair}-${signal.type}-${signal.timeframe}`;
           if (!sentAlerts.has(alertKey)) {
             const icon = signal.type === SignalType.LONG ? '🟢' : '🔴';
-            const msg = `${icon} *TÍN HIỆU HOT: ${signal.pair}*\n\n` +
-              `• Xu hướng: *${signal.type}*\n` +
-              `• Giá: $${formatPrice(signal.price)}\n` +
-              `• Uy tín: ${signal.confidence}%\n` +
-              `• Lý do: ${signal.summary}\n\n` +
-              `👉 Vào App xem chi tiết!`;
+            const entryPrice = signal.price;
+            const stopLoss = formatPrice(signal.price * (signal.type === SignalType.LONG ? 0.95 : 1.05));
+            const tp1 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.08 : 0.92));
+            const tp2 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.15 : 0.85));
+            const tp3 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.30 : 0.70));
+            const dangerZone = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.05 : 0.95));
+
+            const msg = `${icon} *TÍN HIỆU VIP: ${signal.pair}*\n` +
+              `--------------------------------\n` +
+              `🚀 *Xu hướng:* ${signal.type === SignalType.LONG ? 'MUA (LONG)' : 'BÁN (SHORT)'}\n` +
+              `💎 *Độ uy tín:* ${signal.confidence}%\n` +
+              `--------------------------------\n` +
+              `🎯 *Vùng Mua (Entry):* $${formatPrice(entryPrice)}\n` +
+              `⛔ *Cắt Lỗ (SL):* $${stopLoss} (-5%)\n` +
+              `--------------------------------\n` +
+              `💰 *Chốt Lời 1:* $${tp1} (8%)\n` +
+              `💰 *Chốt Lời 2:* $${tp2} (15%)\n` +
+              `🚀 *Moonbag:* $${tp3} (30%)\n` +
+              `--------------------------------\n` +
+              `⚠️ *Vùng nguy hiểm:* Trên $${dangerZone}\n` +
+              `📝 *Lý do:* ${signal.summary}`;
 
             sendTelegramAlert(msg);
             sentAlerts.add(alertKey);

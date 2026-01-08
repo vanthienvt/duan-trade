@@ -81,12 +81,9 @@ const GuideModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="mt-6 p-3 bg-white/5 rounded-lg border border-dashed border-white/10 space-y-2">
+                    <div className="mt-6 p-3 bg-white/5 rounded-lg border border-dashed border-white/10">
                         <p className="text-[10px] text-center italic opacity-70">
                             "Thà bỏ lỡ một cơ hội (mất 0 đồng) còn hơn vào sai một lệnh (mất tiền)."
-                        </p>
-                        <p className="text-[10px] text-center font-bold text-warning">
-                            ⚠️ Lưu ý: Để nhận tin nhắn Telegram, bạn phải TREO MÁY (Mở tab trình duyệt). Nếu tắt App, bot sẽ không báo.
                         </p>
                     </div>
                 </div>

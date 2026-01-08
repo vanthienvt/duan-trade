@@ -221,7 +221,16 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
               </div>
               <div className="flex items-center gap-3">
                 <span className={`text-[10px] font-black px-2 py-1 rounded bg-white/5 uppercase ${item.color}`}>{item.p}</span>
-                <span className="material-symbols-outlined text-text-secondary group-hover:text-primary transition-colors">content_copy</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(item.target.replace(',', ''));
+                    // Optional: You could add a toast notification here
+                  }}
+                  className="material-symbols-outlined text-text-secondary hover:text-primary transition-colors active:scale-90"
+                >
+                  content_copy
+                </button>
               </div>
             </div>
           ))}
