@@ -1,5 +1,18 @@
 export const formatPrice = (price: number): string => {
-    if (price < 0.01) return price.toFixed(8); // For small tokens like PEPE, SHIB
-    if (price < 1) return price.toFixed(4);    // For mid-range tokens
-    return price.toLocaleString();             // For large tokens like BTC, ETH
+    // Custom logic to ensure decimals are consistent
+    let formatted;
+    if (price < 0.01) {
+        // Small tokens: 0,00012345 -> 0,00012345
+        formatted = price.toFixed(8).replace('.', ',');
+    } else if (price < 1) {
+        // Mid tokens: 0,1234 -> 0,1234
+        formatted = price.toFixed(4).replace('.', ',');
+    } else {
+        // Large tokens: 1.234,56
+        formatted = price.toLocaleString('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    return formatted;
 };
