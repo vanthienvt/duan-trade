@@ -25,55 +25,78 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
     const initData = async () => {
       if (!displaySignal) return;
 
-      // Always show loading state briefly for "Real-time" feel
-      // don't wipe existing data, just update smoothly
+      // If we have "Skeleton Data" (Price=0 or OI=N/A), show full loading screen
+      const isSkeleton = !displaySignal.price || displaySignal.price === 0 || displaySignal.openInterest === 'N/A';
+      if (isSkeleton) setLoading(true);
 
-      try {
-        // FORCE FRESH DATA FETCH: This ensures we aren't viewing stale cache
-        // Step 1: Get basic trend data
-        const freshData = await getMarketData(displaySignal.pair);
-
-        let updatedSignal = { ...displaySignal };
-
-        if (freshData) {
-          updatedSignal = {
-            ...updatedSignal,
-            price: freshData.price,
-            change24h: freshData.change24h,
-            rsi: freshData.rsi || 50,
-            // If Pro Data failed (N/A), keep investigating, don't overwrite with N/A if we had data? 
-            // Actually, we want the LATEST truth from the proxy race.
-            openInterest: freshData.openInterest,
-            fundingRate: freshData.fundingRate,
-            oiTrend: freshData.oiTrend,
-            support: freshData.support,
-            resistance: freshData.resistance
-          };
-
-          // Update UI with fresh market data immediately
-          setDisplaySignal(updatedSignal);
+      const fetchDataWithRetry = async (retries = 3, delay = 1000): Promise<any> => {
+        try {
+          const data = await getMarketData(displaySignal.pair);
+          // Simple validation: If price is 0, it's bad data
+          if (!data || data.price === 0) throw new Error("Invalid Data");
+          return data;
+        } catch (err) {
+          if (retries > 0) {
+            await new Promise(res => setTimeout(res, delay));
+            return fetchDataWithRetry(retries - 1, delay * 1.5);
+          }
+          return null; // Give up
         }
+      };
 
-        // Step 2: Run AI Analysis on this FRESH data
-        setLoading(true);
+      // FETCH DATA
+      const freshData = await fetchDataWithRetry();
+
+      let updatedSignal = { ...displaySignal };
+      if (freshData) {
+        updatedSignal = {
+          ...updatedSignal,
+          price: freshData.price,
+          change24h: freshData.change24h,
+          rsi: freshData.rsi || 50,
+          openInterest: freshData.openInterest,
+          fundingRate: freshData.fundingRate,
+          oiTrend: freshData.oiTrend,
+          support: freshData.support,
+          resistance: freshData.resistance
+        };
+        setDisplaySignal(updatedSignal);
+      } else if (isSkeleton) {
+        // If we failed and only have skeleton data, keep loading true? 
+        // Or show error? For now, let's keep loading false but show "Retry" button in UI
+      }
+
+      // FETCH AI ANALYSIS
+      try {
         const aiResult = await getMarketAnalysis(updatedSignal.pair, {
           symbol: updatedSignal.pair,
           price: updatedSignal.price,
           change24h: updatedSignal.change24h,
           rsi: updatedSignal.rsi || 50
         });
-
         setAiAnalysis(aiResult);
-        setLoading(false);
-
       } catch (e) {
-        console.error("Failed to fetch fresh details", e);
-        setLoading(false);
+        console.error("AI Error", e);
       }
+
+      setLoading(false);
     };
 
     initData();
-  }, [signal?.id]); // Re-run when coin changes
+  }, [signal?.id]);
+
+  // FULL PAGE LOADING STATE (If missing critical data)
+  if (!displaySignal || (loading && (!displaySignal.price || displaySignal.price === 0))) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-sm font-bold text-text-secondary animate-pulse">Đang đồng bộ dữ liệu {signal?.pair}...</p>
+        <div className="mt-2 flex gap-2">
+          <span className="text-[10px] text-white/30">Force Proxy Check</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!displaySignal) return null;
 
