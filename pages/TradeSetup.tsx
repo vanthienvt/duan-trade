@@ -205,63 +205,65 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
                     ? 'Tín hiệu rất mạnh. Có thể vào lệnh ngay giá hiện tại.'
                     : 'Tín hiệu tốt. Nên kê lệnh Limit chờ giá hồi về vùng này.'}
                 </p>
-              </div>
-            </div>
-                <span className="text-xl font-black">Trên ${formatPrice(displaySignal.price * 1.05)}</span>
-                <p className="text-[10px] text-text-secondary mt-2 font-bold uppercase tracking-wider">Không nên FOMO mua đuổi tại mức giá này.</p>
-              </div>
-            </div>
-          </div>
-
-          <h3 className="font-black text-lg px-1 tracking-tighter pt-4">Mục Tiêu & Rủi Ro</h3>
-          <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden divide-y divide-white/5">
-            {[
-              { label: 'TP 1 (Ngắn hạn)', target: formatPrice(displaySignal.price * 1.08), p: '+8.0%', color: 'text-bullish', icon: '1' },
-              { label: 'TP 2 (Swing)', target: formatPrice(displaySignal.price * 1.15), p: '+15.2%', color: 'text-bullish', icon: '2' },
-              { label: 'TP 3 (Moonbag)', target: formatPrice(displaySignal.price * 1.30), p: '+30.0%', color: 'text-bullish', icon: 'rocket_launch' },
-              { label: 'Cắt Lỗ (Stop Loss)', target: formatPrice(displaySignal.price * 0.95), p: '-5.0%', color: 'text-bearish', icon: 'shield' }
-            ].map((item, i) => (
-              <div key={i} className={`flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/5' : ''}`}>
-                <div className="flex items-center gap-4">
-                  <div className={`size-8 rounded-full flex items-center justify-center font-black text-xs ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/20 text-bearish' : 'bg-bullish/20 text-bullish'}`}>
-                    {item.icon.length === 1 ? item.icon : <span className="material-symbols-outlined text-[16px]">{item.icon}</span>}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-text-secondary uppercase">{item.label}</span>
-                    <span className={`text-base font-black ${item.color}`}>${item.target}</span>
+                <div className="relative overflow-hidden rounded-2xl border-l-4 border-l-warning bg-surface border-y border-r border-white/5 p-5 group">
+                  <span className="material-symbols-outlined absolute -top-4 -right-4 text-7xl opacity-5">do_not_disturb</span>
+                  <div className="relative z-10">
+                    <span className="text-[10px] font-black uppercase text-warning tracking-widest mb-2 block">Vùng Nguy Hiểm (Danger Zone)</span>
+                    <span className="text-xl font-black">Trên ${formatPrice(displaySignal.price * 1.05)}</span>
+                    <p className="text-[10px] text-text-secondary mt-2 font-bold uppercase tracking-wider">Không nên FOMO mua đuổi tại mức giá này.</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-[10px] font-black px-2 py-1 rounded bg-white/5 uppercase ${item.color}`}>{item.p}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.clipboard.writeText(item.target.replace(',', ''));
-                      // Optional: You could add a toast notification here
-                    }}
-                    className="material-symbols-outlined text-text-secondary hover:text-primary transition-colors active:scale-90"
-                  >
-                    content_copy
-                  </button>
-                </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        <footer className="fixed bottom-0 left-0 w-full p-4 bg-background/90 backdrop-blur-xl border-t border-white/5 z-50 safe-bottom">
-          <button
-            onClick={() => onNavigate('dashboard')}
-            className="w-full h-14 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all rounded-2xl text-white font-black text-sm flex items-center justify-center gap-2 shadow-2xl shadow-primary/40"
-          >
-            <span>Giao Dịch Ngay</span>
-            <span className="material-symbols-outlined">arrow_outward</span>
-          </button>
-        </footer>
+              <h3 className="font-black text-lg px-1 tracking-tighter pt-4">Mục Tiêu & Rủi Ro</h3>
+              <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden divide-y divide-white/5">
+                {[
+                  { label: 'TP 1 (Ngắn hạn)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.08 : 0.92)), p: '8.0%', color: 'text-bullish', icon: '1' },
+                  { label: 'TP 2 (Swing)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.15 : 0.85)), p: '15.0%', color: 'text-bullish', icon: '2' },
+                  { label: 'TP 3 (Moonbag)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.30 : 0.70)), p: '30.0%', color: 'text-bullish', icon: 'rocket_launch' },
+                  { label: 'Cắt Lỗ (Stop Loss)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 0.93 : 1.07)), p: '-7.0%', color: 'text-bearish', icon: 'shield' }
+                ].map((item, i) => (
+                  <div key={i} className={`flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/5' : ''}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`size-8 rounded-full flex items-center justify-center font-black text-xs ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/20 text-bearish' : 'bg-bullish/20 text-bullish'}`}>
+                        {item.icon.length === 1 ? item.icon : <span className="material-symbols-outlined text-[16px]">{item.icon}</span>}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">{item.label}</span>
+                        <span className={`text-base font-black ${item.color}`}>${item.target}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-black px-2 py-1 rounded bg-white/5 uppercase ${item.color}`}>{item.p}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(item.target.replace(',', ''));
+                          // Optional: You could add a toast notification here
+                        }}
+                        className="material-symbols-outlined text-text-secondary hover:text-primary transition-colors active:scale-90"
+                      >
+                        content_copy
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        { showHealth && <SystemHealth onClose={() => setShowHealth(false)} /> }
-      </div >
-      );
+            <footer className="fixed bottom-0 left-0 w-full p-4 bg-background/90 backdrop-blur-xl border-t border-white/5 z-50 safe-bottom">
+              <button
+                onClick={() => onNavigate('dashboard')}
+                className="w-full h-14 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all rounded-2xl text-white font-black text-sm flex items-center justify-center gap-2 shadow-2xl shadow-primary/40"
+              >
+                <span>Giao Dịch Ngay</span>
+                <span className="material-symbols-outlined">arrow_outward</span>
+              </button>
+            </footer>
+
+            {showHealth && <SystemHealth onClose={() => setShowHealth(false)} />}
+          </div >
+          );
 };
 
-export default TradeSetup;
+          export default TradeSetup;
