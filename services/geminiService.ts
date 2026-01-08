@@ -64,6 +64,12 @@ const analyzeMarket = (coin: LocalCoinData, context?: GlobalMarketContext): AIAn
   else if (Math.abs(coin.change24h) > 10) riskLevel = "High (Biến động mạnh)";
   else if (btcTrend === 'UP' && sentimentVal > 40 && sentimentVal < 70) riskLevel = "Low (An toàn)";
 
+  // VOLUME ANALYSIS (New Feature)
+  // If Volume is exceptionally high (> 2x normal) but price is stuck -> Distribution (BAD)
+  // If Volume is high + Price Up -> Strong Momentum (GOOD)
+  // Since we only have raw 24h volume without average, we use basic correlation:
+  const isHighVolume = true; // Placeholder until we have volAvg. For now assume volume confirms trend if price moves significantly.
+
   // 4. Strategic Action Logic (The "Brain")
   let action: "LONG" | "SHORT" | "SIT OUT" = "SIT OUT";
   let confidence = 50;
