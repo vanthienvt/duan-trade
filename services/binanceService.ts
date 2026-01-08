@@ -210,44 +210,57 @@ const getProData = async (symbol: string) => {
 
   // Sequential Proxy Fetcher - Prevents Rate Limiting (429) from CodeTabs
   const fetchWithFallback = async (endpoint: string, symbol: string) => {
+    // Encode URL properly; CodeTabs works best with encoded URLs
     const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${endpoint.includes('?') ? '&' : '?'}symbol=${symbol}&_t=${Date.now()}`;
     const encodedUrl = encodeURIComponent(targetUrl);
 
     const proxies = [
-      // 1. CodeTabs (Reliable, but strict rate limits)
-      { url: `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, type: 'direct' as const },
-      // 2. AllOrigins (Backup)
-      { url: `https://api.allorigins.win/get?url=${encodedUrl}`, type: 'json_wrapper' as const }
+      // 1. CodeTabs (Direct)
+      { url: `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, type: 'direct' as const, name: 'CodeTabs' },
+      // 2. AllOrigins (JSON Wrapper)
+      { url: `https://api.allorigins.win/get?url=${encodedUrl}`, type: 'json_wrapper' as const, name: 'AllOrigins' }
     ];
+
+    let lastError = '';
 
     for (const proxy of proxies) {
       try {
-        // 5s Timeout per proxy
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
 
         const res = await fetch(proxy.url, { signal: controller.signal });
         clearTimeout(timeoutId);
 
-        if (!res.ok) continue; // Try next
-
-        const rawData = await res.json();
-        let payload = rawData;
-
-        if (proxy.type === 'json_wrapper' && rawData.contents) {
-          try { payload = typeof rawData.contents === 'string' ? JSON.parse(rawData.contents) : rawData.contents; }
-          catch { payload = rawData.contents; }
+        if (!res.ok) {
+          lastError = `${proxy.name} ${res.status}`;
+          continue;
         }
 
-        // Validation
+        const text = await res.text();
+        let rawData;
+        try { rawData = JSON.parse(text); }
+        catch { lastError = `${proxy.name} Invalid JSON`; continue; }
+
+        let payload = rawData;
+        if (proxy.type === 'json_wrapper') {
+          if (rawData.contents) {
+            try { payload = typeof rawData.contents === 'string' ? JSON.parse(rawData.contents) : rawData.contents; }
+            catch { payload = rawData.contents; }
+          } else {
+            lastError = `${proxy.name} Empty`; continue;
+          }
+        }
+
         if (payload && (payload.openInterest || payload.lastFundingRate || Array.isArray(payload))) {
           return payload;
         }
-      } catch (e) {
-        // Continue to next proxy
+        if (payload && payload.code) lastError = `API ${payload.code}`;
+
+      } catch (e: any) {
+        lastError = `${proxy.name} ${e.name}`;
       }
     }
-    return null; // All failed
+    return { error: lastError || 'Connect Failed' };
   };
 
   try {
@@ -257,6 +270,15 @@ const getProData = async (symbol: string) => {
       fetchWithFallback('/premiumIndex', formatted),
       fetchWithFallback('/openInterestHist?period=1h&limit=3', formatted)
     ]);
+
+    // Check for explicit error in OI Data
+    if (oiData?.error) {
+      return {
+        openInterest: `Err: ${oiData.error}`,
+        fundingRate: 0,
+        oiTrend: 'NEUTRAL' as const
+      };
+    }
 
     // Check for Spot Only flag
     if ((oiData as any)?.isSpotOnly || (fundData as any)?.isSpotOnly) {
