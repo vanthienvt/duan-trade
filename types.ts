@@ -22,6 +22,7 @@ export interface MarketSignal {
   rsi?: number;
   support?: number;
   resistance?: number;
+  oiTrend?: 'UP' | 'DOWN' | 'NEUTRAL';
 }
 
 export interface TradeAlert {

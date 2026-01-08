@@ -57,6 +57,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
           // Update Pro Data
           openInterest: freshData.openInterest,
           fundingRate: freshData.fundingRate,
+          oiTrend: freshData.oiTrend,
         }));
       }
 
@@ -134,9 +135,17 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
             </p>
             {/* Pro Indicators Display */}
             <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/5">
-              <div className="bg-background/40 rounded-lg p-2 border border-white/5">
+              <div className="bg-background/40 rounded-lg p-2 border border-white/5 relative overflow-hidden">
                 <p className="text-[9px] text-text-secondary uppercase font-bold">Open Interest</p>
-                <p className="text-xs font-black text-white">{displaySignal.openInterest || 'N/A'}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-black text-white">{displaySignal.openInterest || 'N/A'}</p>
+                  {displaySignal.oiTrend && displaySignal.oiTrend !== 'NEUTRAL' && (
+                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${displaySignal.oiTrend === 'UP' ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
+                      <span>{displaySignal.oiTrend === 'UP' ? 'Tăng' : 'Giảm'}</span>
+                      <span className="material-symbols-outlined text-[10px]">{displaySignal.oiTrend === 'UP' ? 'trending_up' : 'trending_down'}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="bg-background/40 rounded-lg p-2 border border-white/5">
                 <p className="text-[9px] text-text-secondary uppercase font-bold">Funding Rate</p>
