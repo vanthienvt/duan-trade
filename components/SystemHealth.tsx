@@ -48,7 +48,8 @@ const SystemHealth: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         checkConnection('https://api.binance.com/api/v3/ping', 'Binance Spot API (Price/Vol)');
 
         // 2. Proxies
-        const target = encodeURIComponent('https://fapi.binance.com/fapi/v1/time');
+        // Use a REAL endpoint that fails if parameters are stripped
+        const target = encodeURIComponent('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT');
         checkConnection(`https://api.allorigins.win/get?url=${target}`, 'CORS Proxy 1 (AllOrigins)', true);
         checkConnection(`https://corsproxy.io/?${target}`, 'CORS Proxy 2 (CorsProxy)');
         checkConnection(`https://api.codetabs.com/v1/proxy?quest=${target}`, 'CORS Proxy 3 (CodeTabs)');
@@ -78,7 +79,7 @@ const SystemHealth: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 {s.status === 'ERROR' && <span className="h-2 w-2 bg-red-500 rounded-full" />}
 
                                 <span className={`text-xs font-bold ${s.status === 'OK' ? 'text-green-400' :
-                                        s.status === 'ERROR' ? 'text-red-400' : 'text-yellow-400'
+                                    s.status === 'ERROR' ? 'text-red-400' : 'text-yellow-400'
                                     }`}>
                                     {s.status === 'OK' ? `${s.latency}ms` : s.status}
                                 </span>
