@@ -218,10 +218,10 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
               <h3 className="font-black text-lg px-1 tracking-tighter pt-4">Mục Tiêu & Rủi Ro</h3>
               <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden divide-y divide-white/5">
                 {[
-                  { label: 'TP 1 (Ngắn hạn)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.08 : 0.92)), p: '8.0%', color: 'text-bullish', icon: '1' },
-                  { label: 'TP 2 (Swing)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.15 : 0.85)), p: '15.0%', color: 'text-bullish', icon: '2' },
-                  { label: 'TP 3 (Moonbag)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.30 : 0.70)), p: '30.0%', color: 'text-bullish', icon: 'rocket_launch' },
-                  { label: 'Cắt Lỗ (Stop Loss)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 0.93 : 1.07)), p: '-7.0%', color: 'text-bearish', icon: 'shield' }
+                  { label: 'TP 1 (Ngắn hạn)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.08 : 0.92)).replace(/,/g, 'X').replace(/\./g, ',').replace(/X/g, '.'), p: '8.0%', color: 'text-bullish', icon: '1' },
+                  { label: 'TP 2 (Swing)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.15 : 0.85)).replace(/,/g, 'X').replace(/\./g, ',').replace(/X/g, '.'), p: '15.0%', color: 'text-bullish', icon: '2' },
+                  { label: 'TP 3 (Moonbag)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.30 : 0.70)).replace(/,/g, 'X').replace(/\./g, ',').replace(/X/g, '.'), p: '30.0%', color: 'text-bullish', icon: 'rocket_launch' },
+                  { label: 'Cắt Lỗ (Stop Loss)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 0.93 : 1.07)).replace(/,/g, 'X').replace(/\./g, ',').replace(/X/g, '.'), p: '-7.0%', color: 'text-bearish', icon: 'shield' }
                 ].map((item, i) => (
                   <div key={i} className={`flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/5' : ''}`}>
                     <div className="flex items-center gap-4">
@@ -238,7 +238,9 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(item.target.replace(',', ''));
+                          // Remove dots (thousands) and keep comma (decimal) for exchange compatibility
+                          const cleanPrice = item.target.replace(/\./g, '');
+                          navigator.clipboard.writeText(cleanPrice);
                           // Optional: You could add a toast notification here
                         }}
                         className="material-symbols-outlined text-text-secondary hover:text-primary transition-colors active:scale-90"
