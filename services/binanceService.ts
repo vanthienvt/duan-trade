@@ -208,42 +208,55 @@ const getProData = async (symbol: string) => {
     }
   };
 
-  const endpointToRequests = (endpoint: string) => {
-    const separator = endpoint.includes('?') ? '&' : '?';
-    const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${separator}symbol=${formatted}&_t=${timestamp}`;
+  // Sequential Proxy Fetcher - Prevents Rate Limiting (429) from CodeTabs
+  const fetchWithFallback = async (endpoint: string, symbol: string) => {
+    const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${endpoint.includes('?') ? '&' : '?'}symbol=${symbol}&_t=${Date.now()}`;
     const encodedUrl = encodeURIComponent(targetUrl);
 
-    // PRIORITY LIST - Tuned based on System Health
-    // 1. CodeTabs (Proven working ~500ms)
-    // 2. AllOrigins (Fast but sometimes returns cached/empty)
-    // 3. ThingProxy (Backup)
-    return [
-      createRequest(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, 'direct'),
-      createRequest(`https://api.allorigins.win/get?url=${encodedUrl}`, 'json_wrapper'),
-      createRequest(`https://thingproxy.freeboard.io/fetch/${targetUrl}`, 'direct')
+    const proxies = [
+      // 1. CodeTabs (Reliable, but strict rate limits)
+      { url: `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, type: 'direct' as const },
+      // 2. AllOrigins (Backup)
+      { url: `https://api.allorigins.win/get?url=${encodedUrl}`, type: 'json_wrapper' as const }
     ];
+
+    for (const proxy of proxies) {
+      try {
+        // 5s Timeout per proxy
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const res = await fetch(proxy.url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) continue; // Try next
+
+        const rawData = await res.json();
+        let payload = rawData;
+
+        if (proxy.type === 'json_wrapper' && rawData.contents) {
+          try { payload = typeof rawData.contents === 'string' ? JSON.parse(rawData.contents) : rawData.contents; }
+          catch { payload = rawData.contents; }
+        }
+
+        // Validation
+        if (payload && (payload.openInterest || payload.lastFundingRate || Array.isArray(payload))) {
+          return payload;
+        }
+      } catch (e) {
+        // Continue to next proxy
+      }
+    }
+    return null; // All failed
   };
 
   try {
-    // INDEPENDENT FETCHING - Don't let one failure kill the other
-    // We use Promise.any to race the proxies for each endpoint type
-
-    // 1. Open Interest
-    const oiPromise = Promise.any(endpointToRequests('/openInterest'))
-      .then(data => data)
-      .catch(() => null);
-
-    // 2. Funding Rate
-    const fundPromise = Promise.any(endpointToRequests('/premiumIndex'))
-      .then(data => data)
-      .catch(() => null);
-
-    // 3. OI History (Trend)
-    const histPromise = Promise.any(endpointToRequests('/openInterestHist?period=1h&limit=3'))
-      .then(data => data)
-      .catch(() => null);
-
-    const [oiData, fundData, oiHistData] = await Promise.all([oiPromise, fundPromise, histPromise]);
+    // Execute endpoints in parallel, but proxies sequentially within each
+    const [oiData, fundData, oiHistData] = await Promise.all([
+      fetchWithFallback('/openInterest', formatted),
+      fetchWithFallback('/premiumIndex', formatted),
+      fetchWithFallback('/openInterestHist?period=1h&limit=3', formatted)
+    ]);
 
     // Check for Spot Only flag
     if ((oiData as any)?.isSpotOnly || (fundData as any)?.isSpotOnly) {
