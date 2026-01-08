@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, MarketSignal, SignalType } from '../types';
 import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
 import { getMarketData } from '../services/apiService';
+import SystemHealth from '../components/SystemHealth';
 
 interface Props {
   signal: MarketSignal | null;
@@ -13,6 +14,7 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
   const [openSections, setOpenSections] = useState<string[]>(['trend', 'ai']);
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showHealth, setShowHealth] = useState(false);
   const [displaySignal, setDisplaySignal] = useState<MarketSignal | null>(signal);
 
   useEffect(() => {
@@ -23,47 +25,55 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
     const initData = async () => {
       if (!displaySignal) return;
 
-      setLoading(true);
+      // Always show loading state briefly for "Real-time" feel
+      // don't wipe existing data, just update smoothly
 
-      // If price is missing (from Alert) or Pro Data is missing (from optimized List), fetch fresh data
-      let currentSignal = displaySignal;
-      if (!displaySignal.price || displaySignal.price === 0 || displaySignal.openInterest === 'N/A') {
-        try {
-          const freshData = await getMarketData(displaySignal.pair);
-          if (freshData) {
-            currentSignal = {
-              ...displaySignal,
-              price: freshData.price,
-              change24h: freshData.change24h,
-              rsi: freshData.rsi || 50,
-              openInterest: freshData.openInterest,
-              fundingRate: freshData.fundingRate,
-              oiTrend: freshData.oiTrend,
-              support: freshData.support,
-              resistance: freshData.resistance
-              // Keep other alert fields like confidence
-            };
-            setDisplaySignal(currentSignal);
-          }
-        } catch (e) {
-          console.error("Failed to fetch fresh details", e);
+      try {
+        // FORCE FRESH DATA FETCH: This ensures we aren't viewing stale cache
+        // Step 1: Get basic trend data
+        const freshData = await getMarketData(displaySignal.pair);
+
+        let updatedSignal = { ...displaySignal };
+
+        if (freshData) {
+          updatedSignal = {
+            ...updatedSignal,
+            price: freshData.price,
+            change24h: freshData.change24h,
+            rsi: freshData.rsi || 50,
+            // If Pro Data failed (N/A), keep investigating, don't overwrite with N/A if we had data? 
+            // Actually, we want the LATEST truth from the proxy race.
+            openInterest: freshData.openInterest,
+            fundingRate: freshData.fundingRate,
+            oiTrend: freshData.oiTrend,
+            support: freshData.support,
+            resistance: freshData.resistance
+          };
+
+          // Update UI with fresh market data immediately
+          setDisplaySignal(updatedSignal);
         }
-      }
 
-      // Now run AI Analysis with valid data
-      getMarketAnalysis(currentSignal.pair, {
-        symbol: currentSignal.pair,
-        price: currentSignal.price,
-        change24h: currentSignal.change24h,
-        rsi: currentSignal.rsi || 50
-      }).then(result => {
-        setAiAnalysis(result);
+        // Step 2: Run AI Analysis on this FRESH data
+        setLoading(true);
+        const aiResult = await getMarketAnalysis(updatedSignal.pair, {
+          symbol: updatedSignal.pair,
+          price: updatedSignal.price,
+          change24h: updatedSignal.change24h,
+          rsi: updatedSignal.rsi || 50
+        });
+
+        setAiAnalysis(aiResult);
         setLoading(false);
-      });
+
+      } catch (e) {
+        console.error("Failed to fetch fresh details", e);
+        setLoading(false);
+      }
     };
 
     initData();
-  }, [signal?.id]); // Depend on ID change to re-trigger
+  }, [signal?.id]); // Re-run when coin changes
 
   if (!displaySignal) return null;
 
@@ -114,9 +124,17 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
             <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange}</span>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-base font-black leading-tight">${displaySignal.price.toLocaleString()}</p>
-          <p className="text-bullish text-[10px] font-black uppercase tracking-widest">+{displaySignal.change24h}%</p>
+        <div className="text-right flex items-center gap-3">
+          <button
+            onClick={() => setShowHealth(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px]">wifi_tethering</span>
+          </button>
+          <div>
+            <p className="text-base font-black leading-tight">${displaySignal.price.toLocaleString()}</p>
+            <p className="text-bullish text-[10px] font-black uppercase tracking-widest">+{displaySignal.change24h}%</p>
+          </div>
         </div>
       </header>
 
@@ -194,9 +212,9 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
                 <div className="flex flex-col mt-1">
                   <span className="text-[9px] text-text-secondary font-bold uppercase tracking-wider">Funding</span>
                   <span className={`text-xs font-black ${loading ? 'text-text-secondary' :
-                      (displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
-                        ? ((displaySignal.fundingRate.startsWith('-')) ? 'text-bullish' : 'text-bearish')
-                        : 'text-text-secondary')
+                    (displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
+                      ? ((displaySignal.fundingRate.startsWith('-')) ? 'text-bullish' : 'text-bearish')
+                      : 'text-text-secondary')
                     }`}>
                     {loading ? <span className="animate-pulse">...</span> :
                       (displaySignal.fundingRate && parseFloat(displaySignal.fundingRate) !== 0
@@ -298,6 +316,7 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
           <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
         </button>
       </footer>
+      {showHealth && <SystemHealth onClose={() => setShowHealth(false)} />}
     </div>
   );
 };
