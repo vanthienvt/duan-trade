@@ -50,8 +50,13 @@ const GuideModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[8px] font-bold text-black border-2 border-surface">2</div>
                             <h3 className="font-bold text-sm text-blue-500 mb-1">Soi 2 Chỉ số Pro (Địa Lợi) 🔍</h3>
                             <ul className="text-xs text-text-secondary space-y-1">
-                                <li>• <strong>OI (Open Interest)</strong>: Phải dương/tăng (Tiền đang vào).</li>
-                                <li>• <strong>Funding Rate</strong>: Thấp hoặc Âm càng tốt (Ít người đu bám).</li>
+                                <li>• <strong>OI Trend</strong>: Phải là <span className="text-bullish font-bold">Tăng 📈</span> hoặc mũi tên xanh (Tiền vào).</li>
+                                <li>• <strong>Funding Rate</strong>:
+                                    <ul className="pl-3 mt-0.5 space-y-0.5 border-l border-white/10 ml-1">
+                                        <li>- Màu <span className="text-bullish font-bold">Xanh (Tốt)</span>: Thấp/Âm (An toàn để Long).</li>
+                                        <li>- Màu <span className="text-bearish font-bold">Đỏ (Cao)</span>: &gt;0.04% (Đông người đu, dễ sập).</li>
+                                    </ul>
+                                </li>
                             </ul>
                         </div>
 
@@ -76,9 +81,12 @@ const GuideModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="mt-6 p-3 bg-white/5 rounded-lg border border-dashed border-white/10">
+                    <div className="mt-6 p-3 bg-white/5 rounded-lg border border-dashed border-white/10 space-y-2">
                         <p className="text-[10px] text-center italic opacity-70">
                             "Thà bỏ lỡ một cơ hội (mất 0 đồng) còn hơn vào sai một lệnh (mất tiền)."
+                        </p>
+                        <p className="text-[10px] text-center font-bold text-warning">
+                            ⚠️ Lưu ý: Để nhận tin nhắn Telegram, bạn phải TREO MÁY (Mở tab trình duyệt). Nếu tắt App, bot sẽ không báo.
                         </p>
                     </div>
                 </div>
