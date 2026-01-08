@@ -213,19 +213,14 @@ const getProData = async (symbol: string) => {
     const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${separator}symbol=${formatted}&_t=${timestamp}`;
     const encodedUrl = encodeURIComponent(targetUrl);
 
-    // PRIORITY LIST - Tuned for best success rate
+    // PRIORITY LIST - Tuned based on System Health
+    // 1. CodeTabs (Proven working ~500ms)
+    // 2. AllOrigins (Fast but sometimes returns cached/empty)
+    // 3. ThingProxy (Backup)
     return [
-      // 1. AllOrigins (Best reliability generally)
+      createRequest(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, 'direct'),
       createRequest(`https://api.allorigins.win/get?url=${encodedUrl}`, 'json_wrapper'),
-
-      // 2. CorsProxy.io (Fastest when working)
-      createRequest(`https://corsproxy.io/?${encodedUrl}`, 'direct'),
-
-      // 3. ThingProxy
-      createRequest(`https://thingproxy.freeboard.io/fetch/${targetUrl}`, 'direct'),
-
-      // 4. CodeTabs
-      createRequest(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, 'direct')
+      createRequest(`https://thingproxy.freeboard.io/fetch/${targetUrl}`, 'direct')
     ];
   };
 
