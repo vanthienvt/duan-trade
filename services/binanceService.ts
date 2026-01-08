@@ -539,8 +539,8 @@ const calculateConfidence = (indicators: TechnicalIndicators, change24h: number,
   let baseConfidence = 50;
   baseConfidence += (score * 5); // Each point = 5%
 
-  // Cap at 88% unless truly exceptional
-  const maxCap = score > 6.5 ? 92 : 85;
+  // Cap at 95% for truly exceptional setups (Score > 7)
+  const maxCap = score >= 7.0 ? 98 : (score > 6.0 ? 90 : 85);
 
   // Add small noise
   const noise = (indicators.rsi * 10) % 3;
