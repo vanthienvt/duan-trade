@@ -45,7 +45,8 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
           if (!sentAlerts.has(alertKey)) {
             const icon = signal.type === SignalType.LONG ? '🟢' : '🔴';
             const entryPrice = signal.price;
-            const stopLoss = formatPrice(signal.price * (signal.type === SignalType.LONG ? 0.95 : 1.05));
+            // SL fixed at 7% to match TradeSetup
+            const stopLoss = formatPrice(signal.price * (signal.type === SignalType.LONG ? 0.93 : 1.07));
             const tp1 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.08 : 0.92));
             const tp2 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.15 : 0.85));
             const tp3 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.30 : 0.70));
@@ -57,7 +58,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
               `💎 *Độ uy tín:* ${signal.confidence}%\n` +
               `--------------------------------\n` +
               `🎯 *Vùng Mua (Entry):* $${formatPrice(entryPrice)}\n` +
-              `⛔ *Cắt Lỗ (SL):* $${stopLoss} (-5%)\n` +
+              `⛔ *Cắt Lỗ (SL):* $${stopLoss} (-7%)\n` +
               `--------------------------------\n` +
               `💰 *Chốt Lời 1:* $${tp1} (8%)\n` +
               `💰 *Chốt Lời 2:* $${tp2} (15%)\n` +
