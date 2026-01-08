@@ -270,8 +270,11 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
             </footer>
 
             {showHealth && <SystemHealth onClose={() => setShowHealth(false)} />}
-          </div >
-          );
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-          export default TradeSetup;
+export default TradeSetup;
