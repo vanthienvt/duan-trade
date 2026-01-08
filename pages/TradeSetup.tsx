@@ -85,7 +85,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
         </button>
         <div className="text-center">
           <h2 className="text-base font-black tracking-tight">{displaySignal.pair}</h2>
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.4 OI</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.5 Full</span>
         </div>
         <button
           onClick={() => setShowHealth(true)}
@@ -156,9 +156,20 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
               </div>
               <div className="bg-background/40 rounded-lg p-2 border border-white/5">
                 <p className="text-[9px] text-text-secondary uppercase font-bold">Funding Rate</p>
-                <p className={`text-xs font-black ${parseFloat(displaySignal.fundingRate || '0') > 0.01 ? 'text-bearish' : 'text-bullish'}`}>
-                  {displaySignal.fundingRate || '0.00%'}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className={`text-xs font-black ${parseFloat(displaySignal.fundingRate || '0') > 0.04 ? 'text-bearish' :
+                    parseFloat(displaySignal.fundingRate || '0') < 0.01 ? 'text-bullish' : 'text-white'
+                    }`}>
+                    {displaySignal.fundingRate || '0.00%'}
+                  </p>
+                  {/* Funding Rate Visual Indicator */}
+                  {(parseFloat(displaySignal.fundingRate || '0') > 0.04) && (
+                    <span className="bg-bearish/20 text-bearish text-[8px] font-bold px-1.5 py-0.5 rounded uppercase">Cao ⚠️</span>
+                  )}
+                  {(parseFloat(displaySignal.fundingRate || '0') <= 0.01) && (
+                    <span className="bg-bullish/20 text-bullish text-[8px] font-bold px-1.5 py-0.5 rounded uppercase">Tốt ✅</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
