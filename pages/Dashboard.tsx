@@ -6,6 +6,7 @@ import { getMarketAnalysis, AIAnalysisResult } from '../services/geminiService';
 import { getBTCContext } from '../services/binanceService';
 
 import GuideModal from '../components/GuideModal';
+import SystemHealth from '../components/SystemHealth';
 
 interface Props {
   onNavigate: (view: View, signal?: MarketSignal) => void;
@@ -27,6 +28,7 @@ const FALLBACK_SIGNAL: MarketSignal = {
 
 const Dashboard: React.FC<Props> = ({ onNavigate }) => {
   const [showGuide, setShowGuide] = useState(false);
+  const [showHealth, setShowHealth] = useState(false);
   const [signal, setSignal] = useState<MarketSignal | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,6 +161,12 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
         <p className="text-text-secondary text-[10px] font-bold uppercase tracking-widest">
           {hasError ? '⚠️ Dữ liệu mẫu' : 'Cập nhật'}: {signal.timestamp} • Hôm nay
         </p>
+        <button
+          onClick={() => setShowHealth(true)}
+          className="ml-2 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[9px] font-bold text-slate-400 hover:text-white transition-colors"
+        >
+          Signal Health
+        </button>
       </div>
 
       {/* Hero Signal Card */}
@@ -339,6 +347,7 @@ const Dashboard: React.FC<Props> = ({ onNavigate }) => {
       </div>
 
       <GuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
+      {showHealth && <SystemHealth onClose={() => setShowHealth(false)} />}
     </div>
   );
 };

@@ -165,7 +165,6 @@ const calculateEMA = (prices: number[], period: number): number => {
   return trendEMA;
 };
 
-// Helper to safely get OI/Funding with FASTEST Proxy Race Strategy (v3.0 - Speed & Reliability)
 const getProData = async (symbol: string) => {
   const formatted = symbol.replace('/', '');
   const timestamp = Date.now();
@@ -173,7 +172,8 @@ const getProData = async (symbol: string) => {
   const createRequest = async (proxyUrl: string, type: 'direct' | 'json_wrapper' = 'direct') => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500); // Fast 3.5s timeout
+      // INCREASED TIMEOUT to 6s
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
       const res = await fetch(proxyUrl, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -186,14 +186,15 @@ const getProData = async (symbol: string) => {
       // Unwrap AllOrigins/JSON wrappers
       if (type === 'json_wrapper' && rawData.contents) {
         try {
-          payload = JSON.parse(rawData.contents);
+          // If contents is a string (often double-encoded JSON), parse it
+          payload = typeof rawData.contents === 'string' ? JSON.parse(rawData.contents) : rawData.contents;
         } catch {
           payload = rawData.contents;
         }
       }
 
       // Check for Spot Only Error (-1121)
-      if (payload.code === -1121) {
+      if (payload && payload.code === -1121) {
         return { isSpotOnly: true };
       }
 
@@ -212,56 +213,73 @@ const getProData = async (symbol: string) => {
     const targetUrl = `${BINANCE_FAPI_BASE}${endpoint}${separator}symbol=${formatted}&_t=${timestamp}`;
     const encodedUrl = encodeURIComponent(targetUrl);
 
-    // RACE CANDIDATES - All run in parallel
+    // PRIORITY LIST - Tuned for best success rate
     return [
-      // 1. AllOrigins (JSON) - High Reliability
+      // 1. AllOrigins (Best reliability generally)
       createRequest(`https://api.allorigins.win/get?url=${encodedUrl}`, 'json_wrapper'),
 
-      // 2. CORSProxy.io - Fast
+      // 2. CorsProxy.io (Fastest when working)
       createRequest(`https://corsproxy.io/?${encodedUrl}`, 'direct'),
 
-      // 3. CodeTabs - Good Fallback
-      createRequest(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, 'direct'),
+      // 3. ThingProxy
+      createRequest(`https://thingproxy.freeboard.io/fetch/${targetUrl}`, 'direct'),
 
-      // 4. ThingProxy - Extra Fallback
-      createRequest(`https://thingproxy.freeboard.io/fetch/${targetUrl}`, 'direct')
+      // 4. CodeTabs
+      createRequest(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, 'direct')
     ];
   };
 
   try {
-    // Run 3 data races in parallel
-    const [oiData, fundData, oiHistData] = await Promise.all([
-      Promise.any(endpointToRequests('/openInterest')),
-      Promise.any(endpointToRequests('/premiumIndex')),
-      Promise.any(endpointToRequests('/openInterestHist?period=1h&limit=2'))
-    ]);
+    // INDEPENDENT FETCHING - Don't let one failure kill the other
+    // We use Promise.any to race the proxies for each endpoint type
 
-    // Check for Spot Only flag from ANY successful response
+    // 1. Open Interest
+    const oiPromise = Promise.any(endpointToRequests('/openInterest'))
+      .then(data => data)
+      .catch(() => null);
+
+    // 2. Funding Rate
+    const fundPromise = Promise.any(endpointToRequests('/premiumIndex'))
+      .then(data => data)
+      .catch(() => null);
+
+    // 3. OI History (Trend)
+    const histPromise = Promise.any(endpointToRequests('/openInterestHist?period=1h&limit=3'))
+      .then(data => data)
+      .catch(() => null);
+
+    const [oiData, fundData, oiHistData] = await Promise.all([oiPromise, fundPromise, histPromise]);
+
+    // Check for Spot Only flag
     if ((oiData as any)?.isSpotOnly || (fundData as any)?.isSpotOnly) {
       return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
     }
 
-    const openInterest = oiData?.openInterest || '0';
-    const fundingRate = fundData?.lastFundingRate || '0';
-    const oiHist = Array.isArray(oiHistData) ? oiHistData : [];
+    const openInterest = oiData?.openInterest || 0;
+    const fundingRate = fundData?.lastFundingRate || 0;
 
     // Determine OI Trend
     let oiTrend: 'UP' | 'DOWN' | 'NEUTRAL' = 'NEUTRAL';
-    if (oiHist && oiHist.length >= 2) {
-      const current = parseFloat(oiHistData[1].sumOpenInterest);
-      const prev = parseFloat(oiHistData[0].sumOpenInterest);
-      if (current > prev * 1.01) oiTrend = 'UP';
-      else if (current < prev * 0.99) oiTrend = 'DOWN';
+    if (Array.isArray(oiHistData) && oiHistData.length >= 2) {
+      // Get last 2 completed candles usually, or current + prev
+      // API returns oldest first. 
+      const last = parseFloat(oiHistData[oiHistData.length - 1].sumOpenInterest);
+      const prev = parseFloat(oiHistData[oiHistData.length - 2].sumOpenInterest);
+
+      const change = (last - prev) / prev;
+      if (change > 0.005) oiTrend = 'UP'; // +0.5%
+      else if (change < -0.005) oiTrend = 'DOWN'; // -0.5%
     }
 
     return {
-      openInterest: parseFloat(openInterest),
-      fundingRate: parseFloat(fundingRate),
+      openInterest: parseFloat(openInterest as string),
+      fundingRate: parseFloat(fundingRate as string),
       oiTrend
     };
   } catch (e) {
-    console.warn('Pro Data Race Failed:', e);
-    // Return 0 so it shows "Spot/No Fut" instead of crashing
+    console.warn('Pro Data Complete Failure:', e);
+    // Return SAFE DEFAULTS so UI doesn't crash or show "N/A" forever if possible.
+    // 0 will be formatted as "N/A" or "0" depending on UI logic, but won't hold up the rest.
     return { openInterest: 0, fundingRate: 0, oiTrend: 'NEUTRAL' as const };
   }
 };
