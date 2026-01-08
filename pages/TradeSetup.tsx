@@ -1,33 +1,96 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, MarketSignal, SignalType } from '../types';
 import { formatPrice } from '../utils';
+import SystemHealth from '../components/SystemHealth';
+import { getMarketData } from '../services/apiService';
 
 interface Props {
   signal: MarketSignal | null;
   onNavigate: (view: View, signal?: MarketSignal) => void;
 }
 
-
-
 const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
   if (!signal) return null;
+
+  const [loading, setLoading] = useState(false);
+  const [showHealth, setShowHealth] = useState(false);
+  const [displaySignal, setDisplaySignal] = useState<MarketSignal>(signal);
+
+  // Update state when prop changes
+  useEffect(() => {
+    if (signal) setDisplaySignal(signal);
+  }, [signal]);
+
 
   // Helper to format price dynamically based on value
   // Uses utils.formatPrice
 
+  useEffect(() => {
+    const initData = async () => {
+      // If we have "Skeleton Data" (Price=0 or OI=N/A), show full loading screen
+      const isSkeleton = !displaySignal.price || displaySignal.price === 0 || displaySignal.openInterest === 'N/A';
+      if (isSkeleton) setLoading(true); // Only blocking load if data is missing
+
+      const fetchDataWithRetry = async (retries = 3, delay = 1000): Promise<any> => {
+        try {
+          const data = await getMarketData(displaySignal.pair);
+          if (!data || data.price === 0) throw new Error("Invalid Data");
+          return data;
+        } catch (err) {
+          if (retries > 0) {
+            await new Promise(res => setTimeout(res, delay));
+            return fetchDataWithRetry(retries - 1, delay * 1.5);
+          }
+          return null;
+        }
+      };
+
+      // FETCH DATA
+      const freshData = await fetchDataWithRetry();
+
+      if (freshData) {
+        setDisplaySignal(prev => ({
+          ...prev,
+          price: freshData.price,
+          change24h: freshData.change24h,
+          // Update Pro Data
+          openInterest: freshData.openInterest,
+          fundingRate: freshData.fundingRate,
+        }));
+      }
+
+      setLoading(false);
+    };
+
+    initData();
+  }, [signal?.id]);
+
+  // Blocking Loading Screen (Only if we have NO valid data)
+  if (loading && (!displaySignal.price || displaySignal.openInterest === 'N/A')) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-sm font-bold text-text-secondary animate-pulse">Đang đồng bộ dữ liệu {signal?.pair}...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col animate-in slide-in-from-bottom duration-500 pb-40">
       <header className="sticky top-0 z-50 flex items-center justify-between bg-background/90 px-4 py-4 backdrop-blur-md border-b border-white/5">
-        <button onClick={() => onNavigate('signals')} className="h-10 w-10 flex items-center justify-center rounded-full">
+        <button onClick={() => onNavigate('signals')} className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/5">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div className="text-center">
-          <h2 className="text-base font-black tracking-tight">{signal.pair}</h2>
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{signal.exchange}</span>
+          <h2 className="text-base font-black tracking-tight">{displaySignal.pair}</h2>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange}</span>
         </div>
-        <button className="h-10 w-10 flex items-center justify-center rounded-full">
-          <span className="material-symbols-outlined">share</span>
+        <button
+          onClick={() => setShowHealth(true)}
+          className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px]">wifi_tethering</span>
         </button>
       </header>
 
@@ -149,6 +212,8 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
           <span className="material-symbols-outlined">arrow_outward</span>
         </button>
       </footer>
+
+      {showHealth && <SystemHealth onClose={() => setShowHealth(false)} />}
     </div>
   );
 };
