@@ -92,9 +92,25 @@ const analyzeMarket = (coin: LocalCoinData, context?: GlobalMarketContext): AIAn
   // Rule 2: Buy Dip in Uptrend
   else if (btcTrend === 'UP') {
     if (sentimentVal > 75) {
-      action = "SIT OUT"; // Too hot
-      confidence = 65;
-      summary = "Thị trường đang quá hưng phấn (Greed). Rủi ro điều chỉnh cao. Không nên mua đuổi (FOMO).";
+      // Market is Euphoric -> High chance of correction -> SHORT OP?
+      if (coin.rsi > 70) {
+        action = "SHORT";
+        confidence = 65;
+        summary = "Đà tăng quá nóng (RSI > 70). Cảnh báo điều chỉnh giảm. Có thể Short lướt sóng (Scalp).";
+        entryZone = "Kháng cự tâm lý";
+        target = "RR 1:1.5";
+      } else {
+        action = "SIT OUT"; // Too hot but not clear short
+        confidence = 60;
+        summary = "Thị trường hưng phấn nhưng chưa có điểm vào an toàn. Không mua đuổi.";
+      }
+    } else if (coin.rsi > 70) {
+      // Local coin overbought despite market ok
+      action = "SHORT";
+      confidence = 60;
+      summary = "Coin này đã tăng nóng cục bộ (RSI cao). Có thể canh Short ngắn ăn sóng hồi.";
+      entryZone = "Đỉnh cũ gần nhất";
+      target = "RR 1:1.5";
     } else {
       action = "LONG";
       confidence = 85;
