@@ -438,7 +438,7 @@ const determineSignalType = (indicators: TechnicalIndicators, change24h: number)
     (rsi < 30 && volumeRatio > 1.5); // Oversold rejection
 
   const isBearish =
-    (rsi > 35 && rsi < 60 && currentPrice < ma20) || // Trend following
+    (rsi > 30 && rsi < 60 && currentPrice < ma20) || // Trend following (Extended range to 30)
     (rsi > 70 && volumeRatio > 1.5); // Overbought rejection
 
   if (isBullish) return SignalType.LONG;
@@ -485,7 +485,7 @@ const calculateConfluenceScore = (indicators: TechnicalIndicators, signalType: S
       reasons.push(`Vùng quá bán (lực bật đáy)`);
     }
   } else if (signalType === SignalType.SHORT) {
-    if (rsi < 60 && rsi > 35) {
+    if (rsi < 60 && rsi > 30) {
       score += 1.0 + (rsi % 10) / 20; // Variance
       reasons.push(`Động lượng giảm`);
     } else if (rsi > 70) {
@@ -680,22 +680,33 @@ const scanTopMarketCoins = async (): Promise<string[]> => {
     });
 
     // Filter USDT pairs, exclude stablecoins/leverage tokens/old pairs
+    // Also filter for minimum volume (e.g. > 1M USDT) to avoid manipulation on dead coins
     const validPairs = data.filter((t: any) =>
       t.symbol.endsWith('USDT') &&
       !t.symbol.includes('UP') &&
       !t.symbol.includes('DOWN') &&
       !t.symbol.includes('BEAR') &&
       !t.symbol.includes('BULL') &&
-      !['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT', 'BUSDUSDT', 'USDPUSDT', 'EURUSDT'].includes(t.symbol)
+      !['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT', 'BUSDUSDT', 'USDPUSDT', 'EURUSDT'].includes(t.symbol) &&
+      parseFloat(t.quoteVolume) > 1000000 // Min 1M Volume
     );
 
-    // Sort by Quote Volume (Liquidity) -> Top 50
-    const topCoins = validPairs
-      .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
-      .slice(0, 50)
+    // 1. Top 25 Gainers (Top Long Candidates)
+    const topGainers = validPairs
+      .sort((a: any, b: any) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent))
+      .slice(0, 25)
       .map((t: any) => t.symbol);
 
-    return topCoins;
+    // 2. Top 25 Losers (Top Short Candidates)
+    const topLosers = validPairs
+      .sort((a: any, b: any) => parseFloat(a.priceChangePercent) - parseFloat(b.priceChangePercent))
+      .slice(0, 25)
+      .map((t: any) => t.symbol);
+
+    // Merge and Deduplicate (just in case)
+    const combined = Array.from(new Set([...topGainers, ...topLosers]));
+
+    return combined;
   } catch (error) {
     console.error('Scanner Error:', error);
     // Fallback if API fails

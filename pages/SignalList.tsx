@@ -93,24 +93,10 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
       // Previously, this hid SHORT signals if BTC was UP, even if the Short signal was valid.
       const listToSort = data;
 
-      listToSort.sort((a, b) => {
-        // Priority Map: LONG (3) > SHORT (2) > NEUTRAL (1)
-        const getPriority = (type: SignalType) => {
-          if (type === SignalType.LONG) return 3;
-          if (type === SignalType.SHORT) return 2;
-          return 1;
-        };
-
-        const priorityA = getPriority(a.type);
-        const priorityB = getPriority(b.type);
-
-        if (priorityA !== priorityB) {
-          return priorityB - priorityA; // High priority first
-        }
-
-        // Secondary Sort: Confidence
-        return b.confidence - a.confidence;
-      });
+      // FIX: Clean Sort by Confidence Only
+      // This ensures a fair mix of Long and Short based on how good the signal is, 
+      // rather than forcing Longs to the top.
+      listToSort.sort((a, b) => b.confidence - a.confidence);
 
       setSignals(listToSort);
       setLoading(false);
@@ -132,7 +118,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
     <div className="flex flex-col animate-in slide-in-from-right duration-300">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md px-4 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold">Tín Hiệu AI <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-black align-middle ml-2">v2.5</span></h1>
+          <h1 className="text-xl font-extrabold">Tín Hiệu AI <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-black align-middle ml-2">v2.6</span></h1>
           <p className="text-xs text-text-secondary font-medium">Bản đồ BTC: <span className={btcTrend === 'UP' ? 'text-bullish' : 'text-bearish'}>{btcTrend}</span></p>
         </div>
         <button
