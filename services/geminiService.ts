@@ -109,7 +109,16 @@ const analyzeMarket = (coin: LocalCoinData, context?: GlobalMarketContext): AIAn
       confidence = 60;
       summary = "BTC đi ngang nhưng Altcoin này đang có lực mua tốt. Có thể lướt sóng ngắn (Scalp).";
       entryZone = "Test lại hỗ trợ ngắn hạn";
-    } else {
+    }
+    else if (isCoinBearish && coin.rsi > 30) {
+      // Coin is weak while BTC sleeps (and not yet Oversold)
+      action = "SHORT";
+      confidence = 60;
+      summary = "BTC đi ngang nhưng cấu trúc coin này đang xấu. Canh hồi nhẹ để Short lướt sóng.";
+      entryZone = "Kháng cự cục bộ (Local Resistance)";
+      target = "RR 1:1.5 (Ngắn hạn)";
+    }
+    else {
       action = "SIT OUT";
       confidence = 60;
       summary = "BTC đang đi ngang biên độ hẹp. Altcoin chưa có sóng rõ ràng. Nên đứng ngoài.";
