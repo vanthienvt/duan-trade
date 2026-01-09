@@ -75,8 +75,9 @@ const analyzeMarket = (coin: LocalCoinData, context?: GlobalMarketContext): AIAn
   let confidence = 50;
   let summary = "Thị trường chưa rõ xu hướng. Nên quan sát thêm.";
   let entryZone = "Chờ tín hiệu";
+  let target = "RR 1:2"; // Default target
 
-  // Rule 1: Never Long in Downtrend (unless coin is exceptionally strong independent mover)
+  // Rule 1: Never Long in Downtrend (unless coin is exceptionallly strong independent mover)
   if (btcTrend === 'DOWN') {
     action = "SIT OUT";
     confidence = 80;
@@ -135,7 +136,7 @@ const analyzeMarket = (coin: LocalCoinData, context?: GlobalMarketContext): AIAn
     riskLevel,
     entryZone,
     stopLoss: "Theo cấu trúc sóng",
-    target: "RR 1:2"
+    target
   };
 };
 
