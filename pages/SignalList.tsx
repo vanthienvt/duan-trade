@@ -39,8 +39,8 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
 
       // TELEGRAM ALERT LOGIC
       data.forEach(signal => {
-        // Condition: Strong Confidence (>=90%) AND Strong Trend (Long/Short) AND Not Sent Yet
-        if (signal.confidence >= 90 && signal.type !== SignalType.NEUTRAL) {
+        // Condition: Confidence >= 80% (User requested for testing phase) AND Strong Trend (Long/Short) AND Not Sent Yet
+        if (signal.confidence >= 80 && signal.type !== SignalType.NEUTRAL) {
           const alertKey = `${signal.pair}-${signal.type}-${signal.timeframe}`;
           if (!sentAlerts.has(alertKey)) {
             const icon = signal.type === SignalType.LONG ? '🟢' : '🔴';
