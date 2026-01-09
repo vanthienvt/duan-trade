@@ -85,7 +85,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
         </button>
         <div className="text-center">
           <h2 className="text-base font-black tracking-tight">{displaySignal.pair}</h2>
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.5 Full</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.6 Full</span>
         </div>
         <button
           onClick={() => setShowHealth(true)}

@@ -144,7 +144,7 @@ const AnalysisDetails: React.FC<Props> = ({ signal, onNavigate }) => {
           </button>
           <div>
             <h1 className="text-base font-black tracking-tight">{displaySignal.pair}</h1>
-            <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.2</span>
+            <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.6</span>
           </div>
         </div>
         <div className="text-right flex items-center gap-3">
