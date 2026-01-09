@@ -14,6 +14,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
   const [signals, setSignals] = useState<MarketSignal[]>([]);
   const [loading, setLoading] = useState(true);
   const [btcTrend, setBtcTrend] = useState<'UP' | 'DOWN' | 'NEUTRAL'>('NEUTRAL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tất cả');
   const [showSettings, setShowSettings] = useState(false);
 
@@ -147,6 +148,20 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
 
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
+      {/* Search Input */}
+      <div className="px-4 mt-2">
+        <div className="relative group">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors">search</span>
+          <input
+            type="text"
+            placeholder="Tìm kiếm Coin (VD: BTC, ETH...)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-surface border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm font-bold placeholder:font-normal focus:outline-none focus:border-primary/50 transition-all shadow-sm"
+          />
+        </div>
+      </div>
+
       {/* Filter Chips */}
       <div className="flex gap-2 overflow-x-auto px-4 py-3 no-scrollbar">
         {['Tất cả', 'Long (Mua)', 'Short (Bán)', 'Uy tín cao'].map((chip) => (
@@ -169,6 +184,10 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
       <div className="flex flex-col gap-4 px-4 pb-10">
         {signals
           .filter(s => {
+            // Priority Check: Search Query
+            if (searchQuery && !s.pair.toLowerCase().includes(searchQuery.toLowerCase())) {
+              return false;
+            }
             if (activeFilter === 'Long (Mua)') return s.type === SignalType.LONG;
             if (activeFilter === 'Short (Bán)') return s.type === SignalType.SHORT;
             if (activeFilter === 'Uy tín cao') return s.confidence >= 70;
@@ -176,11 +195,14 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
           })
           .length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-text-secondary">Không có dữ liệu phù hợp</p>
+            <p className="text-text-secondary">{searchQuery ? `Không tìm thấy coin nào khớp với "${searchQuery}"` : 'Không có dữ liệu phù hợp'}</p>
           </div>
         ) : (
           signals
             .filter(s => {
+              if (searchQuery && !s.pair.toLowerCase().includes(searchQuery.toLowerCase())) {
+                return false;
+              }
               if (activeFilter === 'Long (Mua)') return s.type === SignalType.LONG;
               if (activeFilter === 'Short (Bán)') return s.type === SignalType.SHORT;
               if (activeFilter === 'Uy tín cao') return s.confidence >= 70;
