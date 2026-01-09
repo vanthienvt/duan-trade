@@ -18,8 +18,8 @@ const GuideModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-white/5">
                     <h2 className="text-lg font-bold flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary">school</span>
-                        Hướng Dẫn & Nguyên Tắc
+                        <span className="material-symbols-outlined text-yellow-400">workspace_premium</span>
+                        4 Nguyên Tắc Vàng
                     </h2>
                     <button
                         onClick={onClose}
@@ -31,45 +31,63 @@ const GuideModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
                 {/* Content */}
                 <div className="p-5 overflow-y-auto custom-scrollbar">
-                    {/* Pro Rules Section */}
-                    <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <span className="material-symbols-outlined text-yellow-400">workspace_premium</span>
-                            <h2 className="text-lg font-bold text-yellow-400 uppercase tracking-wider">Nguyên Tắc Vàng (Pro Rules)</h2>
+                    {/* Image */}
+                    <div className="mb-6 rounded-xl overflow-hidden border border-white/20 shadow-lg relative group">
+                        <img
+                            src="./pro-rules.png"
+                            alt="Trading Pro Rules"
+                            className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
+                        <p className="absolute bottom-2 right-3 text-[10px] text-white/50 italic">Designed by AI Assistant</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        {/* Rule 1 */}
+                        <div className="bg-surface p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-black font-bold text-xs">1</div>
+                                <h3 className="font-bold text-sm text-primary">Liếc nhìn BTC (Thiên Thời) 🔥</h3>
+                            </div>
+                            <p className="text-xs text-text-secondary pl-9">
+                                Nếu BTC đang <span className="text-red-500 font-bold">Đỏ (Down)</span> mà App báo Mua -&gt; <strong>BỎ NGAY</strong>. Chỉ chơi khi BTC Xanh hoặc Đi ngang.
+                            </p>
                         </div>
 
-                        <div className="mb-6 rounded-xl overflow-hidden border border-white/20 shadow-lg relative group">
-                            <img
-                                src="./pro-rules.png"
-                                alt="Trading Pro Rules"
-                                className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
-                            <p className="absolute bottom-2 right-3 text-[10px] text-white/50 italic">Designed by AI Assistant</p>
+                        {/* Rule 2 */}
+                        <div className="bg-surface p-4 rounded-xl border border-white/5 hover:border-blue-500/30 transition-colors">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-black font-bold text-xs">2</div>
+                                <h3 className="font-bold text-sm text-blue-500">Soi 2 Chỉ số Pro (Địa Lợi) 🔍</h3>
+                            </div>
+                            <ul className="text-xs text-text-secondary pl-9 space-y-1">
+                                <li>• <strong>OI Trend</strong>: Phải là <span className="text-bullish font-bold">Tăng 📈</span> (Tiền vào).</li>
+                                <li>• <strong>Funding Rate</strong>: Xanh (Thấp/Âm) là Tốt. Đỏ (Cao) là Nguy hiểm.</li>
+                            </ul>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="bg-surface p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
-                                <h3 className="font-bold text-sm text-blue-400 mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-base">filter_3</span>
-                                    Chất lượng hơn Số lượng
-                                </h3>
-                                <p className="text-xs text-text-secondary leading-relaxed">
-                                    <span className="text-white font-bold block mb-1">Tối đa 3 - 5 lệnh/ngày.</span>
-                                    Chỉ vào lệnh khi có tín hiệu "Điểm 10" (Uy tín &gt; 90%, Trend Tăng). Đừng cố đánh nhiều để rồi mất vốn vào những lệnh không rõ ràng.
-                                </p>
+                        {/* Rule 3 */}
+                        <div className="bg-surface p-4 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-colors">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-xs">3</div>
+                                <h3 className="font-bold text-sm text-yellow-500">Đo khoảng cách (Vị thế) 📏</h3>
                             </div>
+                            <p className="text-xs text-text-secondary pl-9">
+                                Giá phải nằm trong <strong>Vùng Mua (Entry)</strong>. Nếu giá đã chạy quá xa -&gt; Bỏ, không FOMO.
+                            </p>
+                        </div>
 
-                            <div className="bg-surface p-4 rounded-xl border border-white/5 hover:border-warning/30 transition-colors">
-                                <h3 className="font-bold text-sm text-warning mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-base">bedtime</span>
-                                    Lệnh qua đêm (Overnight)
-                                </h3>
-                                <div className="text-xs text-text-secondary space-y-2">
-                                    <p><strong className="text-white">Day Trade:</strong> HỦY LỆNH trước khi ngủ. Đừng để rủi ro biến động đêm làm mất giấc ngủ ngon.</p>
-                                    <p><strong className="text-white">Swing:</strong> Chỉ giữ khi BTC Trend còn Tốt và vị thế đang có lãi/an toàn.</p>
-                                </div>
+                        {/* Rule 4 */}
+                        <div className="bg-surface p-4 rounded-xl border border-white/5 hover:border-green-500/30 transition-colors">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-black font-bold text-xs">4</div>
+                                <h3 className="font-bold text-sm text-green-500">Hành động (Kỷ luật thép) 🛡️</h3>
                             </div>
+                            <ul className="text-xs text-text-secondary pl-9 space-y-1">
+                                <li>• Vào lệnh Market/Limit.</li>
+                                <li>• <strong className="text-red-400">Đặt Stoploss (7%) NGAY LẬP TỨC.</strong></li>
+                                <li>• Tuân thủ chốt lời TP1, TP2.</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
