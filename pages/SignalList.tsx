@@ -86,15 +86,12 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
       // Global Sort: ALWAYS sort by Strength (Buy > Sell > Neutral) & Confidence
       // We process the list regardless of BTC context to ensure sorting is consistent
 
-      const listToSort = btcContext ?
-        // If BTC Filter active: Hide opposing signals? Or just de-prioritize?
-        // User asked for "Strong Buy on Top". Strict filter might hide them if BTC is down.
-        // Let's keep the filter but SORT what remains.
-        data.filter(s => {
-          const trend = btcContext.trend_4h === 'UP' ? SignalType.LONG : SignalType.SHORT;
-          return s.type === trend || s.type === SignalType.NEUTRAL;
-        })
-        : data;
+      // Global Sort: ALWAYS sort by Strength (Buy > Sell > Neutral) & Confidence
+      // We process the list regardless of BTC context to ensure sorting is consistent
+
+      // FIX: Do NOT filter by BTC Trend here. Let the user decide via UI Tabs.
+      // Previously, this hid SHORT signals if BTC was UP, even if the Short signal was valid.
+      const listToSort = data;
 
       listToSort.sort((a, b) => {
         // Priority Map: LONG (3) > SHORT (2) > NEUTRAL (1)
