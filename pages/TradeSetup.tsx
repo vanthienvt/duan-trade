@@ -218,44 +218,46 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
               <h3 className="font-black text-lg px-1 tracking-tighter pt-4">Mục Tiêu & Rủi Ro</h3>
               <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden divide-y divide-white/5">
                 {[
-                  { label: 'TP 1 (Ngắn hạn)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.08 : 0.92)), p: '8.0%', color: 'text-bullish', icon: '1' },
-                  { label: 'TP 2 (Swing)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.15 : 0.85)), p: '15.0%', color: 'text-bullish', icon: '2' },
-                  { label: 'TP 3 (Moonbag)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 1.30 : 0.70)), p: '30.0%', color: 'text-bullish', icon: 'rocket_launch' },
-                  { label: 'Cắt Lỗ (Stop Loss)', target: formatPrice(displaySignal.price * (displaySignal.type === SignalType.LONG ? 0.93 : 1.07)), p: '-7.0%', color: 'text-bearish', icon: 'shield' }
-                ].map((item, i) => (
-                  <div key={i} className={`flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/5' : ''}`}>
-                    <div className="flex items-center gap-4">
-                      <div className={`size-8 rounded-full flex items-center justify-center font-black text-xs ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/20 text-bearish' : 'bg-bullish/20 text-bullish'}`}>
-                        {item.icon.length === 1 ? item.icon : <span className="material-symbols-outlined text-[16px]">{item.icon}</span>}
+                  { label: 'TP 1 (Ngắn hạn)', multiplier: displaySignal.type === SignalType.LONG ? 1.08 : 0.92, p: '8.0%', color: 'text-bullish', icon: '1' },
+                  { label: 'TP 2 (Swing)', multiplier: displaySignal.type === SignalType.LONG ? 1.15 : 0.85, p: '15.0%', color: 'text-bullish', icon: '2' },
+                  { label: 'TP 3 (Moonbag)', multiplier: displaySignal.type === SignalType.LONG ? 1.30 : 0.70, p: '30.0%', color: 'text-bullish', icon: 'rocket_launch' },
+                  { label: 'Cắt Lỗ (Stop Loss)', multiplier: displaySignal.type === SignalType.LONG ? 0.93 : 1.07, p: '-7.0%', color: 'text-bearish', icon: 'shield' }
+                ].map((item, i) => {
+                  const targetPrice = displaySignal.price * item.multiplier;
+                  return (
+                    <div key={i} className={`flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/5' : ''}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`size-8 rounded-full flex items-center justify-center font-black text-xs ${item.label.includes('Cắt Lỗ') ? 'bg-bearish/20 text-bearish' : 'bg-bullish/20 text-bullish'}`}>
+                          {item.icon.length === 1 ? item.icon : <span className="material-symbols-outlined text-[16px]">{item.icon}</span>}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-text-secondary uppercase">{item.label}</span>
+                          <span className={`text-base font-black ${item.color}`}>${formatPrice(targetPrice)}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-text-secondary uppercase">{item.label}</span>
-                        <span className={`text-base font-black ${item.color}`}>${item.target}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-[10px] font-black px-2 py-1 rounded bg-white/5 uppercase ${item.color}`}>{item.p}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Remove dots (thousands) and replace comma with dot (decimal) for exchange compatibility
-                          // "1.234,56" -> "1234.56" (Binance understands this)
-                          // OR "1234,56" (Binance might also understand this depending on locale, but dot decimal is standard for API/Input)
-                          // User requested: "đổi giấy . thành ," (meaning display comma). 
-                          // And previously: "copy bỏ lên sàn sẽ thành số lớn" -> likely because "1,234" was interpreted as 1234 in a locale that expects dot.
-                          // Safest for Exchange Input: Raw Number "1234.56"
+                      <div className="flex items-center gap-3">
+                        <span className={`text-[10px] font-black px-2 py-1 rounded bg-white/5 uppercase ${item.color}`}>{item.p}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Calculate RAW Price for Exchange (Always use Dot for decimal)
+                            // Logic: High price (>1) -> 2 decimals. Low price (<1) -> 4 or 8 decimals.
+                            let rawPrice;
+                            if (targetPrice < 0.01) rawPrice = targetPrice.toFixed(8);
+                            else if (targetPrice < 1) rawPrice = targetPrice.toFixed(4);
+                            else rawPrice = targetPrice.toFixed(2);
 
-                          // Convert "1.234,56" back to "1234.56"
-                          const rawPrice = item.target.replace(/\./g, '').replace(',', '.');
-                          navigator.clipboard.writeText(rawPrice);
-                        }}
-                        className="material-symbols-outlined text-text-secondary hover:text-primary transition-colors active:scale-90"
-                      >
-                        content_copy
-                      </button>
+                            navigator.clipboard.writeText(rawPrice);
+                            // Optional: Could add a toast here if we had one
+                          }}
+                          className="material-symbols-outlined text-text-secondary hover:text-primary transition-colors active:scale-90"
+                        >
+                          content_copy
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
