@@ -49,45 +49,43 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
         return () => clearInterval(interval);
     }, []);
 
-    // --- STATS ---
-    // Safe Balance: Check if totalEq exists, otherwise try logic or 0
-    const totalEquity = balance ? parseFloat(balance.totalEq || '0') : 0;
+    // --- PROFESSIONAL MATHS ---
+    const totalEquity = balance ? parseFloat(balance.totalEq) : 0;
+    const realizedOrders = history.filter(h => parseFloat(h.pnl) !== 0);
 
-    // Filter History: Only show REALIZED PnL (Trade Close)
-    // Logic: pnl != 0. If pnl == 0, it's likely an opening trade.
-    const realizedHistory = history.filter(h => parseFloat(h.pnl) !== 0);
+    // 1. KPI Calculation
+    const totalWins = realizedOrders.filter(o => parseFloat(o.pnl) > 0).length;
+    const totalTrades = realizedOrders.length;
+    const winRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
 
-    // Today PnL
+    const grossProfit = realizedOrders.filter(o => parseFloat(o.pnl) > 0).reduce((sum, o) => sum + parseFloat(o.pnl), 0);
+    const grossLoss = Math.abs(realizedOrders.filter(o => parseFloat(o.pnl) < 0).reduce((sum, o) => sum + parseFloat(o.pnl), 0));
+    const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : '∞';
+
+    const todayPnL = realizedOrders
+        .filter(o => new Date(parseInt(o.fillTime || o.uTime)).setHours(0, 0, 0, 0) === new Date().setHours(0, 0, 0, 0))
+        .reduce((sum, o) => sum + parseFloat(o.pnl), 0);
+
+    // 2. Calendar Heatmap Data
+    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const todayOrders = realizedHistory.filter(o => parseInt(o.fillTime || o.uTime) >= startOfDay);
-    const todayPnL = todayOrders.reduce((sum, o) => sum + parseFloat(o.pnl), 0);
-    const todayTrades = todayOrders.length;
-    const todayWins = todayOrders.filter(o => parseFloat(o.pnl) > 0).length;
+    const daysInMonth = getDaysInMonth(now.getFullYear(), now.getMonth());
+    const monthData = Array(daysInMonth).fill(0);
 
-    // Chart Data (Last 7 Days)
-    const daysMap = new Map<string, number>();
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const key = `${d.getDate()}/${d.getMonth() + 1}`;
-        daysMap.set(key, 0);
-    }
-    realizedHistory.forEach(order => {
-        const d = new Date(parseInt(order.fillTime || order.uTime));
-        const key = `${d.getDate()}/${d.getMonth() + 1}`;
-        if (daysMap.has(key)) {
-            daysMap.set(key, (daysMap.get(key) || 0) + parseFloat(order.pnl));
+    realizedOrders.forEach(o => {
+        const d = new Date(parseInt(o.fillTime || o.uTime));
+        // Only current month
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            monthData[d.getDate() - 1] += parseFloat(o.pnl);
         }
     });
-    const chartData = Array.from(daysMap.entries()).map(([date, pnl]) => ({ date, pnl }));
-    const maxPnL = Math.max(...chartData.map(d => Math.abs(d.pnl)), 10);
 
     // --- RENDER ---
     if (!hasKey) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 text-center animate-in fade-in">
-                <h2 className="text-xl font-bold mb-2">Kết nối Ví OKX</h2>
-                <button onClick={() => setShowSettings(true)} className="bg-primary text-background font-bold py-3 px-8 rounded-full shadow-lg">Nhập API Key</button>
+            <div className="flex flex-col items-center justify-center min-h-[50vh] animate-in fade-in">
+                <h2 className="text-xl font-bold mb-4">Trading Journal Pro</h2>
+                <button onClick={() => setShowSettings(true)} className="bg-primary text-background font-bold py-3 px-8 rounded-full">Kết nối OKX</button>
                 <SettingsModal isOpen={showSettings} onClose={() => { setShowSettings(false); fetchData(); }} />
             </div>
         );
@@ -95,119 +93,88 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
 
     return (
         <div className="pb-24 animate-in fade-in duration-500">
-            <header className="px-5 py-4 flex items-center justify-between">
-                <h1 className="text-xl font-black text-white">Quản Lý Vốn</h1>
-                <button onClick={() => setShowSettings(true)}><span className="material-symbols-outlined text-text-secondary">settings</span></button>
+            <header className="px-5 py-4 flex items-center justify-between bg-surface/50 backdrop-blur-md sticky top-0 z-10 border-b border-white/5">
+                <div>
+                    <h1 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Net Worth</h1>
+                    <div className="text-2xl font-black text-white flex gap-2 items-baseline">
+                        {totalEquity > 0 ? `$${totalEquity.toLocaleString()}` : <span className="text-red-500 text-base">Error Load</span>}
+                        <span className={`text-sm font-bold ${todayPnL >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                            {todayPnL > 0 ? '+' : ''}{todayPnL.toFixed(2)}$
+                        </span>
+                    </div>
+                </div>
+                <button onClick={() => setShowSettings(true)} className="bg-white/5 p-2 rounded-full"><span className="material-symbols-outlined text-sm">settings</span></button>
             </header>
 
-            <div className="px-4 space-y-4">
+            <div className="p-4 space-y-6">
 
-                {/* 1. BALANCE CARD (Fix NaN) */}
-                <div className="bg-gradient-to-r from-surface to-surface/50 border border-white/5 rounded-2xl p-5 shadow-lg relative overflow-hidden">
-                    <div className="absolute -right-4 -bottom-4 opacity-5 transform rotate-12"><span className="material-symbols-outlined text-9xl">wallet</span></div>
-                    <p className="text-[10px] uppercase font-bold text-text-secondary tracking-widest">Tổng Tài Sản (Equity)</p>
-                    <div className="text-4xl font-black text-white mt-1">
-                        {totalEquity > 0 ? `$${totalEquity.toLocaleString()}` : error ? <span className="text-red-500 text-sm">Lỗi</span> : '...'}
-                        <span className="text-sm font-medium text-text-secondary ml-1">USDT</span>
+                {/* 1. KPIs ROW */}
+                <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-surface border border-white/5 rounded-xl p-3 text-center">
+                        <p className="text-[9px] text-text-secondary uppercase font-bold">Win Rate</p>
+                        <p className={`text-lg font-black ${winRate >= 50 ? 'text-bullish' : 'text-bearish'}`}>{winRate}%</p>
                     </div>
-                    <div className="mt-4 flex gap-6 border-t border-white/5 pt-3">
-                        <div>
-                            <p className="text-[9px] text-text-secondary uppercase mb-0.5">Lãi hôm nay</p>
-                            <p className={`font-bold text-lg leading-none ${todayPnL >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                                {todayPnL > 0 ? '+' : ''}{todayPnL.toFixed(2)}$
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-[9px] text-text-secondary uppercase mb-0.5">Số lệnh</p>
-                            <p className="font-bold text-lg leading-none text-white">{todayTrades}</p>
-                        </div>
+                    <div className="bg-surface border border-white/5 rounded-xl p-3 text-center">
+                        <p className="text-[9px] text-text-secondary uppercase font-bold">Profit Factor</p>
+                        <p className="text-lg font-black text-white">{profitFactor}</p>
+                    </div>
+                    <div className="bg-surface border border-white/5 rounded-xl p-3 text-center">
+                        <p className="text-[9px] text-text-secondary uppercase font-bold">Trades</p>
+                        <p className="text-lg font-black text-white">{totalTrades}</p>
                     </div>
                 </div>
 
-                {/* 2. BAR CHART */}
+                {/* 2. MONTHLY CALENDAR HEATMAP */}
                 <div className="bg-surface border border-white/5 rounded-2xl p-4">
-                    <h3 className="text-[10px] font-bold text-text-secondary uppercase mb-4">Biểu đồ Lãi/Lỗ (7 ngày)</h3>
-                    <div className="flex justify-between items-end h-24 gap-2">
-                        {chartData.map((day, index) => {
-                            const heightPercent = Math.max((Math.abs(day.pnl) / maxPnL) * 100, 5);
-                            const isPositive = day.pnl >= 0;
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xs font-bold text-text-secondary uppercase">Tháng {now.getMonth() + 1} Performance</h3>
+                        <span className={`text-xs font-black ${monthData.reduce((a, b) => a + b, 0) >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                            Total: {monthData.reduce((a, b) => a + b, 0).toFixed(2)}$
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-7 gap-2">
+                        {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(d => (
+                            <div key={d} className="text-[9px] text-center text-text-secondary font-bold">{d}</div>
+                        ))}
+                        {/* Empty slots for start of month alignment (simple version: verify accurate first) */}
+
+                        {monthData.map((pnl, i) => {
+                            const day = i + 1;
+                            const isToday = day === now.getDate();
+                            const hasTrade = pnl !== 0;
                             return (
-                                <div key={index} className="flex-1 flex flex-col items-center gap-1 group">
-                                    <span className={`text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity absolute -mt-4 ${isPositive ? 'text-bullish' : 'text-bearish'}`}>
-                                        {Math.round(day.pnl)}$
-                                    </span>
-                                    <div className="relative w-full flex justify-center items-end h-full">
-                                        <div
-                                            className={`w-full max-w-[8px] rounded-full opacity-80 group-hover:opacity-100 transition-all ${isPositive ? 'bg-bullish' : 'bg-bearish'}`}
-                                            style={{ height: `${heightPercent}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="text-[8px] text-text-secondary">{day.date}</span>
+                                <div key={i} className={`aspect-square rounded-lg flex flex-col items-center justify-center border ${isToday ? 'border-primary' : 'border-transparent'} ${hasTrade ? (pnl > 0 ? 'bg-bullish/20' : 'bg-bearish/20') : 'bg-white/5'}`}>
+                                    <span className={`text-[10px] font-bold ${hasTrade ? (pnl >= 0 ? 'text-bullish' : 'text-bearish') : 'text-text-secondary'}`}>{day}</span>
+                                    {hasTrade && <span className={`text-[7px] ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>{Math.round(pnl)}</span>}
                                 </div>
                             )
                         })}
                     </div>
                 </div>
 
-                {/* 3. ACTIVE POSITIONS (ULTRA COMPACT) */}
+                {/* 3. ACTIVE POSITIONS & HISTORY (TABS STYLE REPLACEMENT) */}
                 <div>
-                    <h3 className="text-xs font-bold text-text-secondary uppercase mb-2 px-1">Đang Chạy ({positions.length})</h3>
-                    <div className="bg-surface border border-white/5 rounded-xl overflow-hidden divide-y divide-white/5">
-                        {positions.length === 0 ? (
-                            <div className="p-3 text-center text-xs text-text-secondary italic">Không có lệnh nào.</div>
-                        ) : (
-                            positions.map((pos) => {
-                                const isLong = pos.posSide === 'long';
+                    <h3 className="text-xs font-bold text-text-secondary uppercase mb-2">Đang Chạy ({positions.length})</h3>
+                    <div className="space-y-2">
+                        {positions.length === 0 ? <p className="text-xs text-text-secondary italic text-center py-4 bg-surface rounded-xl">Flat Market (Không có lệnh)</p> :
+                            positions.map(pos => {
                                 const pnl = parseFloat(pos.upl);
                                 return (
-                                    <div key={pos.instId} className="flex items-center justify-between p-3 py-2 hover:bg-white/5 transition-colors">
+                                    <div key={pos.instId} className="bg-surface border border-white/5 rounded-xl p-3 flex justify-between items-center">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-1.5 h-1.5 rounded-full ${isLong ? 'bg-bullish' : 'bg-bearish'}`}></div>
-                                            <span className="font-bold text-sm text-white">{pos.instId.split('-')[0]}</span>
-                                            <span className={`text-[9px] font-bold px-1.5 rounded ${isLong ? 'bg-bullish/10 text-bullish' : 'bg-bearish/10 text-bearish'}`}>
-                                                {isLong ? 'L' : 'S'} x{pos.lever}
-                                            </span>
+                                            <div className={`w-1 h-6 rounded-full ${pos.posSide === 'long' ? 'bg-bullish' : 'bg-bearish'}`}></div>
+                                            <span className="font-black text-sm">{pos.instId.split('-')[0]}</span>
+                                            <span className="text-[10px] bg-white/10 px-1.5 rounded text-text-secondary">x{pos.lever}</span>
                                         </div>
-                                        <span className={`font-mono font-bold text-sm ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                                        <span className={`font-black ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
                                             {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}$
                                         </span>
                                     </div>
-                                );
+                                )
                             })
-                        )}
+                        }
                     </div>
                 </div>
-
-                {/* 4. REALIZED HISTORY (FILTERED) */}
-                <div>
-                    <h3 className="text-xs font-bold text-text-secondary uppercase mb-2 px-1">Lịch sử chốt (Đã lọc)</h3>
-                    <div className="bg-surface border border-white/5 rounded-xl overflow-hidden divide-y divide-white/5">
-                        {realizedHistory.slice(0, 5).map((order) => {
-                            const pnl = parseFloat(order.pnl || '0');
-                            return (
-                                <div key={order.ordId} className="flex items-center justify-between p-3 py-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-black ${pnl > 0 ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
-                                            {pnl > 0 ? 'WIN' : 'LOSS'}
-                                        </span>
-                                        <span className="text-xs font-medium text-white">{order.instId.split('-')[0]}</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`font-bold text-sm block ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                                            {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}$
-                                        </span>
-                                        <span className="text-[10px] text-text-secondary">
-                                            {new Date(parseInt(order.fillTime || order.uTime)).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                        {realizedHistory.length === 0 && <p className="p-3 text-center text-xs text-text-secondary">Chưa có lệnh chốt lời/lỗ nào.</p>}
-                    </div>
-                </div>
-
-                {error && <div className="text-center text-red-500 text-xs mt-4 bg-red-500/10 p-2 rounded">{error}</div>}
 
             </div>
             <SettingsModal isOpen={showSettings} onClose={() => { setShowSettings(false); fetchData(); }} />
