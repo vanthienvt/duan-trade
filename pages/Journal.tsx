@@ -97,7 +97,11 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
                 <div>
                     <h1 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Net Worth</h1>
                     <div className="text-2xl font-black text-white flex gap-2 items-baseline">
-                        {totalEquity > 0 ? `$${totalEquity.toLocaleString()}` : <span className="text-red-500 text-base">Error Load</span>}
+                        {balance ? (
+                            `$${parseFloat(balance.totalEq || '0').toLocaleString()}`
+                        ) : (
+                            <span className="text-red-500 text-base">{error || 'Loading...'}</span>
+                        )}
                         <span className={`text-sm font-bold ${todayPnL >= 0 ? 'text-bullish' : 'text-bearish'}`}>
                             {todayPnL > 0 ? '+' : ''}{todayPnL.toFixed(2)}$
                         </span>
