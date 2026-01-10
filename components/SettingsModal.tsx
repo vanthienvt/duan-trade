@@ -108,6 +108,46 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         </label>
                     </div>
 
+                    <div className="h-px bg-white/10 my-4"></div>
+
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
+                        Kết nối OKX
+                    </h2>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-text-secondary mb-1">API Key</label>
+                            <input
+                                type="password"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-primary outline-none transition-all"
+                                placeholder="Nhập API Key..."
+                                value={okxSettings.apiKey}
+                                onChange={e => setOkxSettings({ ...okxSettings, apiKey: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-text-secondary mb-1">Secret Key</label>
+                            <input
+                                type="password"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-primary outline-none transition-all"
+                                placeholder="Nhập Secret Key..."
+                                value={okxSettings.secretKey}
+                                onChange={e => setOkxSettings({ ...okxSettings, secretKey: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-text-secondary mb-1">Passphrase</label>
+                            <input
+                                type="password"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-primary outline-none transition-all"
+                                placeholder="Nhập mật khẩu API..."
+                                value={okxSettings.passphrase}
+                                onChange={e => setOkxSettings({ ...okxSettings, passphrase: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
                     <div className="flex gap-3 mt-4">
                         <button
                             onClick={handleTestAlert}
