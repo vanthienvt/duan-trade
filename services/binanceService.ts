@@ -596,7 +596,7 @@ const generateSignals = async (symbols: string[]): Promise<MarketSignal[]> => {
           return {
             id: symbol.toLowerCase(),
             pair,
-            exchange: 'Binance Spot',
+            exchange: 'Binance',
             price: marketData.price,
             change24h: parseFloat(marketData.change24h.toFixed(2)),
             type: signalType,
