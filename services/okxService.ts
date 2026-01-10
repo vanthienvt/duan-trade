@@ -111,11 +111,11 @@ async function fetchOKX(endpoint: string, method: string = 'GET', body: object |
 
 export const getAccountDetail = async (): Promise<AccountBalance | null> => {
     try {
-        // Get Balance
+        // Get Balance (Remove ccy filter to capture total equity correctly)
         // Endpoint: /account/balance
-        const data = await fetchOKX('/account/balance?ccy=USDT');
+        const data = await fetchOKX('/account/balance');
         if (data && data.length > 0) {
-            return data[0].details[0] || data[0]; // OKX structure varies slightly, but usually data[0] is correct
+            return data[0].details[0] || data[0];
         }
         return null;
     } catch (error) {
@@ -126,14 +126,13 @@ export const getAccountDetail = async (): Promise<AccountBalance | null> => {
 
 export const getOpenPositions = async (): Promise<Position[]> => {
     // Endpoint: /account/positions (Get ALL types: Spot, Futures, Margin)
-    // Note: OKX returns code '0' even if empty, but throws if auth fails
     const data = await fetchOKX('/account/positions');
     return data || [];
 };
 
 export const getHistory = async (): Promise<any[]> => {
-    // Get last 100 orders (History) to calculate Daily/Monthly Stats
-    // instType=SWAP is required for this endpoint
+    // Get last 100 orders (History)
     const data = await fetchOKX('/trade/orders-history?instType=SWAP&state=filled&limit=100');
-    return data || [];
+    // Client-side Sort: Newest first
+    return data ? data.sort((a: any, b: any) => parseInt(b.fillTime || b.uTime) - parseInt(a.fillTime || a.uTime)) : [];
 };
