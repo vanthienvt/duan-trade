@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TelegramSettings, getTelegramSettings, saveTelegramSettings, sendTelegramAlert } from '../services/telegramService';
+import { OKXSettings, getOKXSettings, saveOKXSettings } from '../services/okxService';
 
 interface Props {
     isOpen: boolean;
@@ -8,10 +9,12 @@ interface Props {
 
 const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
     const [settings, setSettings] = useState<TelegramSettings>({ botToken: '', chatId: '', enabled: false });
+    const [okxSettings, setOkxSettings] = useState<OKXSettings>({ apiKey: '', secretKey: '', passphrase: '' });
 
     useEffect(() => {
         if (isOpen) {
             setSettings(getTelegramSettings());
+            setOkxSettings(getOKXSettings());
         }
     }, [isOpen]);
 
@@ -26,6 +29,7 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     const handleSave = () => {
         saveTelegramSettings(settings);
+        saveOKXSettings(okxSettings);
         onClose();
     };
 

@@ -15,8 +15,8 @@ echo 2. Doi Server san sang (5 giay)...
 timeout /t 5 >nul
 
 echo 3. Mo Giao dien App...
-:: Try opening in Chrome App Mode (No tabs, looks like real app)
-start chrome --app=http://localhost:3000
+:: Open standard Chrome window with flags to prevent background sleeping
+start chrome --new-window --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows http://localhost:3000
 
 echo.
 echo ====================================================

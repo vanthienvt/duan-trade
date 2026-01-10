@@ -34,6 +34,14 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      proxy: {
+        '/api/okx': {
+          target: 'https://www.okx.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/okx/, '/api/v5'),
+          secure: false
+        }
+      },
     },
     build: {
       outDir: 'dist',
