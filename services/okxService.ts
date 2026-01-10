@@ -111,15 +111,19 @@ async function fetchOKX(endpoint: string, method: string = 'GET', body: object |
 
 export const getAccountDetail = async (): Promise<AccountBalance | null> => {
     try {
-        // Get Balance (Remove ccy filter to capture total equity correctly)
-        // Endpoint: /account/balance
-        const data = await fetchOKX('/account/balance');
+        // Use Asset Valuation to get Total Net Worth (Funding + Trading) in USDT
+        // Endpoint: /asset/asset-valuation
+        const data = await fetchOKX('/asset/asset-valuation?ccy=USDT');
         if (data && data.length > 0) {
-            return data[0].details[0] || data[0];
+            return {
+                totalEq: data[0].totalBal, // Total Balance in USDT
+                totalEqIso: '0',
+                imr: '0'
+            };
         }
         return null;
     } catch (error) {
-        console.error('Fetch Balance Error:', error);
+        console.error('Fetch Valuation Error:', error);
         return null;
     }
 };
