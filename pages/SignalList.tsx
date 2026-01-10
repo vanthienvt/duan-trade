@@ -46,24 +46,24 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
           if (!sentAlerts.has(alertKey)) {
             const icon = signal.type === SignalType.LONG ? '🟢' : '🔴';
             const entryPrice = signal.price;
-            // SL fixed at 7% to match TradeSetup
-            const stopLoss = formatPrice(signal.price * (signal.type === SignalType.LONG ? 0.93 : 1.07));
-            const tp1 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.08 : 0.92));
-            const tp2 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.15 : 0.85));
-            const tp3 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.30 : 0.70));
+            // SL fixed at 3.5% for Futures x5
+            const stopLoss = formatPrice(signal.price * (signal.type === SignalType.LONG ? 0.965 : 1.035));
+            const tp1 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.04 : 0.96));
+            const tp2 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.08 : 0.92));
+            const tp3 = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.15 : 0.85));
             const dangerZone = formatPrice(signal.price * (signal.type === SignalType.LONG ? 1.05 : 0.95));
 
-            const msg = `${icon} *TÍN HIỆU VIP: ${signal.pair}*\n` +
+            const msg = `${icon} *TÍN HIỆU VIP (Futures x5): ${signal.pair}*\n` +
               `--------------------------------\n` +
               `🚀 *Xu hướng:* ${signal.type === SignalType.LONG ? 'MUA (LONG)' : 'BÁN (SHORT)'}\n` +
               `💎 *Độ uy tín:* ${signal.confidence}%\n` +
               `--------------------------------\n` +
               `🎯 *Vùng Mua (Entry):* $${formatPrice(entryPrice)}\n` +
-              `⛔ *Cắt Lỗ (SL):* $${stopLoss} (-7%)\n` +
+              `⛔ *Cắt Lỗ (SL):* $${stopLoss} (-3.5%)\n` +
               `--------------------------------\n` +
-              `💰 *Chốt Lời 1:* $${tp1} (8%)\n` +
-              `💰 *Chốt Lời 2:* $${tp2} (15%)\n` +
-              `🚀 *Moonbag:* $${tp3} (30%)\n` +
+              `💰 *Chốt Lời 1:* $${tp1} (4%)\n` +
+              `💰 *Chốt Lời 2:* $${tp2} (8%)\n` +
+              `🚀 *Moonbag:* $${tp3} (15%)\n` +
               `--------------------------------\n` +
               `⚠️ *Vùng nguy hiểm:* Trên $${dangerZone}\n` +
               `📝 *Lý do:* ${signal.summary}`;

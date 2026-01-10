@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, MarketSignal, SignalType } from '../types';
-import { formatPrice } from '../utils';
+import { formatPrice, formatExchangePrice } from '../utils';
 import SystemHealth from '../components/SystemHealth';
 import { getMarketData } from '../services/apiService';
 
@@ -85,7 +85,7 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
         </button>
         <div className="text-center">
           <h2 className="text-base font-black tracking-tight">{displaySignal.pair}</h2>
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} v2.6 Full</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">{displaySignal.exchange} Futures x5</span>
         </div>
         <button
           onClick={() => setShowHealth(true)}
@@ -218,10 +218,10 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
               <h3 className="font-black text-lg px-1 tracking-tighter pt-4">Mục Tiêu & Rủi Ro</h3>
               <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden divide-y divide-white/5">
                 {[
-                  { label: 'TP 1 (Ngắn hạn)', multiplier: displaySignal.type === SignalType.LONG ? 1.08 : 0.92, p: '8.0%', color: 'text-bullish', icon: '1' },
-                  { label: 'TP 2 (Swing)', multiplier: displaySignal.type === SignalType.LONG ? 1.15 : 0.85, p: '15.0%', color: 'text-bullish', icon: '2' },
-                  { label: 'TP 3 (Moonbag)', multiplier: displaySignal.type === SignalType.LONG ? 1.30 : 0.70, p: '30.0%', color: 'text-bullish', icon: 'rocket_launch' },
-                  { label: 'Cắt Lỗ (Stop Loss)', multiplier: displaySignal.type === SignalType.LONG ? 0.93 : 1.07, p: '-7.0%', color: 'text-bearish', icon: 'shield' }
+                  { label: 'TP 1 (Scalp)', multiplier: displaySignal.type === SignalType.LONG ? 1.04 : 0.96, p: '4.0%', color: 'text-bullish', icon: '1' },
+                  { label: 'TP 2 (Target)', multiplier: displaySignal.type === SignalType.LONG ? 1.08 : 0.92, p: '8.0%', color: 'text-bullish', icon: '2' },
+                  { label: 'TP 3 (Moonbag)', multiplier: displaySignal.type === SignalType.LONG ? 1.15 : 0.85, p: '15.0%', color: 'text-bullish', icon: 'rocket_launch' },
+                  { label: 'Stop Loss (Cắt lỗ)', multiplier: displaySignal.type === SignalType.LONG ? 0.965 : 1.035, p: '-3.5%', color: 'text-bearish', icon: 'shield' }
                 ].map((item, i) => {
                   const targetPrice = displaySignal.price * item.multiplier;
                   return (
@@ -240,13 +240,8 @@ const TradeSetup: React.FC<Props> = ({ signal, onNavigate }) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Calculate RAW Price for Exchange (Always use Dot for decimal)
-                            // Logic: High price (>1) -> 2 decimals. Low price (<1) -> 4 or 8 decimals.
-                            let rawPrice;
-                            if (targetPrice < 0.01) rawPrice = targetPrice.toFixed(8);
-                            else if (targetPrice < 1) rawPrice = targetPrice.toFixed(4);
-                            else rawPrice = targetPrice.toFixed(2);
-
+                            // Use Strict Exchange Formatter (Fixes copy error)
+                            const rawPrice = formatExchangePrice(targetPrice);
                             navigator.clipboard.writeText(rawPrice);
                             // Optional: Could add a toast here if we had one
                           }}
