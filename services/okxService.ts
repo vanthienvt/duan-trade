@@ -74,7 +74,9 @@ async function fetchOKX(endpoint: string, method: string = 'GET', body: object |
     // Standard format: 2020-12-08T09:08:57.715Z
 
     const bodyString = body ? JSON.stringify(body) : '';
-    const signText = `${timestamp}${method}${endpoint}${bodyString}`;
+    // IMPORTANT: OKX signature requires /api/v5 prefix
+    const signPath = `/api/v5${endpoint}`;
+    const signText = `${timestamp}${method}${signPath}${bodyString}`;
     const signature = await sign(signText, settings.secretKey);
 
     const headers: HeadersInit = {
@@ -123,23 +125,15 @@ export const getAccountDetail = async (): Promise<AccountBalance | null> => {
 };
 
 export const getOpenPositions = async (): Promise<Position[]> => {
-    try {
-        // Endpoint: /account/positions (Get ALL types: Spot, Futures, Margin)
-        const data = await fetchOKX('/account/positions');
-        return data || [];
-    } catch (error) {
-        console.error('Fetch Positions Error:', error);
-        return [];
-    }
+    // Endpoint: /account/positions (Get ALL types: Spot, Futures, Margin)
+    // Note: OKX returns code '0' even if empty, but throws if auth fails
+    const data = await fetchOKX('/account/positions');
+    return data || [];
 };
 
 export const getHistory = async (): Promise<any[]> => {
-    try {
-        // Get last 10 filled orders (History)
-        const data = await fetchOKX('/trade/orders-history-archive?instType=SWAP&state=filled&limit=10');
-        return data || [];
-    } catch (error) {
-        // console.error('Fetch History Error:', error);
-        return [];
-    }
+    // Get last 7 days history (faster & more relevant than archive)
+    // instType=SWAP is required for this endpoint
+    const data = await fetchOKX('/trade/orders-history?instType=SWAP&state=filled&limit=10');
+    return data || [];
 };

@@ -18,7 +18,7 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
 
     const fetchData = async () => {
         setLoading(true);
-        setError('');
+        // Don't clear error immediately to avoid flicker if it persists
 
         const settings = getOKXSettings();
         if (!settings.apiKey) {
@@ -37,6 +37,7 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
             setBalance(balData);
             setPositions(posData);
             setHistory(histData || []);
+            setError('');
         } catch (err: any) {
             setError(err.message || 'Lỗi tải dữ liệu');
         } finally {
@@ -46,30 +47,38 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
 
     useEffect(() => {
         fetchData();
-        // Auto refresh every 30s
-        const interval = setInterval(fetchData, 30000);
+        const interval = setInterval(fetchData, 15000); // Faster refresh (15s)
         return () => clearInterval(interval);
     }, []);
 
-    // Calculate Totals
+    // --- STATS CALCULATION ---
     const totalPnL = positions.reduce((sum, p) => sum + parseFloat(p.upl), 0);
-    const totalInvested = positions.reduce((sum, p) => sum + (parseFloat(p.sz) * parseFloat(p.avgPx) / parseFloat(p.lever)), 0);
 
+    // Win Rate from History (Last 10)
+    const closedOrders = history.filter(o => parseFloat(o.pnl) !== 0);
+    const winningOrders = closedOrders.filter(o => parseFloat(o.pnl) > 0);
+    const winRate = closedOrders.length > 0
+        ? Math.round((winningOrders.length / closedOrders.length) * 100)
+        : 0;
+
+    const totalRealizedPnL = closedOrders.reduce((sum, o) => sum + parseFloat(o.pnl), 0);
+
+    // --- RENDER ---
     if (!hasKey) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 text-center animate-in fade-in">
-                <div className="h-16 w-16 bg-surface rounded-full flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-3xl text-primary">account_balance_wallet</span>
+                <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                    <span className="material-symbols-outlined text-4xl text-primary">account_balance_wallet</span>
                 </div>
-                <h2 className="text-xl font-bold mb-2">Kết nối OKX</h2>
-                <p className="text-text-secondary text-sm mb-6">
-                    Nhập API Key để xem Nhật ký giao dịch, quản lý Lời/Lỗ tự động.
+                <h2 className="text-xl font-bold mb-2">Kết nối Ví OKX</h2>
+                <p className="text-text-secondary text-sm mb-8 max-w-[250px]">
+                    Nhập API Key để App tự động thống kê Lời/Lỗ và hiệu suất giao dịch của bạn.
                 </p>
                 <button
                     onClick={() => setShowSettings(true)}
-                    className="bg-primary text-background font-bold py-3 px-6 rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
+                    className="bg-primary text-background font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-all"
                 >
-                    Nhập API Key Ngay
+                    Nhập API Key
                 </button>
                 <SettingsModal isOpen={showSettings} onClose={() => { setShowSettings(false); fetchData(); }} />
             </div>
@@ -77,103 +86,93 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
     }
 
     return (
-        <div className="pb-24 animate-in slide-in-from-right duration-300">
-            <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md px-4 py-4 flex items-center justify-between">
-                <h1 className="text-xl font-extrabold flex items-center gap-2">
-                    <span className="material-symbols-outlined fill-1">history_edu</span>
-                    Nhật Ký Lời/Lỗ
+        <div className="pb-24 animate-in fade-in duration-500">
+            {/* HEADER */}
+            <header className="px-5 py-4 flex items-center justify-between">
+                <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                    My Portfolio
                 </h1>
-                <button
-                    onClick={fetchData}
-                    className="h-8 w-8 flex items-center justify-center rounded-full bg-surface hover:bg-white/10"
-                >
-                    <span className={`material-symbols-outlined text-sm ${loading ? 'animate-spin' : ''}`}>refresh</span>
+                <button onClick={() => setShowSettings(true)} className="p-2 bg-white/5 rounded-full hover:bg-white/10">
+                    <span className="material-symbols-outlined text-sm text-text-secondary">settings</span>
                 </button>
             </header>
 
-            <div className="px-4 space-y-4">
-                {/* SUMMARY CARD */}
-                <div className="bg-surface rounded-2xl p-6 border border-white/5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <span className="material-symbols-outlined text-8xl">account_balance</span>
+            <div className="px-4 space-y-6">
+
+                {/* 1. HERO SECTION: PORTFOLIO VALUE + WINRATE */}
+                <div className="grid grid-cols-3 gap-3">
+                    {/* Total Balance (Chiếm 2/3) */}
+                    <div className="col-span-2 bg-gradient-to-br from-surface to-surface/50 border border-white/5 rounded-2xl p-4 shadow-xl">
+                        <p className="text-[10px] uppercase font-bold text-text-secondary tracking-wider mb-1">Tổng Tài Sản</p>
+                        <div className="text-2xl font-black text-white tracking-tight">
+                            {balance ? `$${parseFloat(balance.totalEq).toLocaleString()}` : '---'}
+                        </div>
+                        <div className="mt-4 flex items-center gap-2">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${totalRealizedPnL >= 0 ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
+                                {totalRealizedPnL > 0 ? '+' : ''}{totalRealizedPnL.toFixed(2)}$ (Today)
+                            </span>
+                        </div>
                     </div>
 
-                    <p className="text-text-secondary text-xs font-bold uppercase tracking-widest mb-1">Tổng Tài Sản (Equity)</p>
-                    <div className="text-3xl font-black tracking-tight flex items-baseline gap-1">
-                        {balance ? `$${parseFloat(balance.totalEq).toLocaleString()}` : '---'}
-                        <span className="text-sm font-medium text-text-secondary">USDT</span>
-                    </div>
-
-                    <div className="mt-4 flex gap-4">
-                        <div>
-                            <p className="text-[10px] text-text-secondary uppercase">Đang Ký Quỹ</p>
-                            <p className="font-bold text-lg">{totalInvested ? `$${totalInvested.toFixed(2)}` : '$0.00'}</p>
+                    {/* Winrate Circle (Chiếm 1/3) */}
+                    <div className="col-span-1 bg-surface border border-white/5 rounded-2xl p-2 flex flex-col items-center justify-center relative shadow-xl">
+                        <div className="relative h-14 w-14 flex items-center justify-center">
+                            <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90">
+                                <circle cx="28" cy="28" r="24" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5" />
+                                <circle cx="28" cy="28" r="24" stroke="currentColor" strokeWidth="4" fill="transparent"
+                                    className={`${winRate >= 50 ? 'text-primary' : 'text-text-secondary'}`}
+                                    strokeDasharray={2 * Math.PI * 24}
+                                    strokeDashoffset={2 * Math.PI * 24 * (1 - winRate / 100)}
+                                />
+                            </svg>
+                            <span className="text-xs font-black">{winRate}%</span>
                         </div>
-                        <div>
-                            <p className="text-[10px] text-text-secondary uppercase">PnL Thả Nổi</p>
-                            <p className={`font-bold text-lg ${totalPnL >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                                {totalPnL > 0 ? '+' : ''}{totalPnL.toFixed(2)} $
-                            </p>
-                        </div>
+                        <p className="text-[9px] font-bold text-text-secondary mt-1 uppercase">Win Rate</p>
                     </div>
                 </div>
 
-                {error && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">error</span>
-                        {error}
-                    </div>
-                )}
-
-                {/* POSITIONS LIST */}
+                {/* 2. ACTIVE POSITIONS (GRID CARD) */}
                 <div>
-                    <h3 className="text-sm font-bold text-text-secondary uppercase mb-3 px-1">Vị thế đang mở ({positions.length})</h3>
+                    <div className="flex items-center justify-between mb-3 px-1">
+                        <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            Đang Chạy ({positions.length})
+                        </h3>
+                        <span className={`text-xs font-black ${totalPnL >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                            PnL: {totalPnL > 0 ? '+' : ''}{totalPnL.toFixed(2)}$
+                        </span>
+                    </div>
 
                     {positions.length === 0 ? (
-                        <div className="text-center py-8 text-text-secondary text-sm bg-surface/30 rounded-xl border border-white/5 border-dashed">
-                            Chưa có lệnh nào đang chạy.
+                        <div className="bg-surface/30 border border-white/5 border-dashed rounded-xl h-24 flex items-center justify-center text-text-secondary text-xs">
+                            Không có lệnh nào đang mở
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                             {positions.map((pos) => {
                                 const isLong = pos.posSide === 'long';
                                 const pnl = parseFloat(pos.upl);
-                                const pnlPercent = parseFloat(pos.uplRatio) * 100;
-
                                 return (
-                                    <div key={pos.instId} className="bg-surface rounded-xl p-4 border border-white/5 flex flex-col gap-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`h-8 w-1 rounded-full ${isLong ? 'bg-bullish' : 'bg-bearish'}`}></div>
-                                                <div>
-                                                    <h4 className="font-bold">{pos.instId.replace('-USDT-SWAP', '')}</h4>
-                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isLong ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
-                                                        {isLong ? 'LONG' : 'SHORT'} x{pos.lever}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className={`font-bold text-lg ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                                                    {pnl > 0 ? '+' : ''}{pnl.toFixed(2)} $
-                                                </p>
-                                                <p className={`text-xs font-medium ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                                                    {pnlPercent > 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
-                                                </p>
-                                            </div>
-                                        </div>
+                                    <div key={pos.instId} className="bg-surface border border-white/5 rounded-2xl p-3 relative overflow-hidden group hover:border-white/20 transition-all">
+                                        {/* Side Indicator Stripe */}
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${isLong ? 'bg-bullish' : 'bg-bearish'}`}></div>
 
-                                        <div className="grid grid-cols-3 gap-2 text-[10px] text-text-secondary bg-background/50 p-2 rounded-lg">
-                                            <div>
-                                                <p>Giá vào</p>
-                                                <p className="text-white font-medium">{parseFloat(pos.avgPx).toFixed(4)}</p>
+                                        <div className="pl-2">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="font-bold text-sm tracking-tight">{pos.instId.split('-')[0]}</span>
+                                                <span className={`text-[9px] font-black px-1.5 rounded ${isLong ? 'bg-bullish/10 text-bullish' : 'bg-bearish/10 text-bearish'}`}>
+                                                    x{pos.lever}
+                                                </span>
                                             </div>
-                                            <div>
-                                                <p>Thanh lý</p>
-                                                <p className="text-warning font-medium">{pos.liqPx || '---'}</p>
+
+                                            <div className={`text-xl font-black ${pnl >= 0 ? 'text-bullish' : 'text-bearish'} tracking-tighter`}>
+                                                {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}
                                             </div>
-                                            <div>
-                                                <p>Ký quỹ</p>
-                                                <p className="text-white font-medium">{(parseFloat(pos.sz) * parseFloat(pos.avgPx) / parseFloat(pos.lever)).toFixed(2)}$</p>
+                                            <div className="text-[10px] text-text-secondary flex justify-between mt-1">
+                                                <span>ROI</span>
+                                                <span className={pnl >= 0 ? 'text-bullish' : 'text-bearish'}>
+                                                    {(parseFloat(pos.uplRatio) * 100).toFixed(1)}%
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -183,38 +182,27 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
                     )}
                 </div>
 
-                {/* HISTORY LIST */}
-                <div>
-                    <h3 className="text-sm font-bold text-text-secondary uppercase mb-3 px-1 mt-6">Lịch sử lệnh đã đóng (Gần đây)</h3>
-                    {history.length === 0 ? (
-                        <p className="text-xs text-text-secondary italic px-1">Chưa có dữ liệu lịch sử.</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {history.map((order: any) => {
-                                const isBuy = order.side === 'buy';
-                                const pnl = parseFloat(order.pnl || '0');
-                                return (
-                                    <div key={order.ordId} className="bg-surface/50 rounded-lg p-3 border border-white/5 flex justify-between items-center">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-[10px] font-bold px-1 rounded ${isBuy ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
-                                                    {isBuy ? 'MUA' : order.side === 'sell' ? 'BÁN' : order.side}
-                                                </span>
-                                                <span className="font-bold text-sm">{order.instId.replace('-USDT-SWAP', '')}</span>
-                                            </div>
-                                            <p className="text-[10px] text-text-secondary">{new Date(parseInt(order.uTime)).toLocaleString('vi-VN')}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className={`font-bold ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                                                {pnl > 0 ? '+' : ''}{pnl.toFixed(2)} $
-                                            </p>
-                                            <p className="text-[10px] text-text-secondary">Giá: {order.avgPx}</p>
-                                        </div>
+                {/* 3. RECENT ACTIVITY (COMPACT ROW) */}
+                <div className="bg-surface/50 border border-white/5 rounded-2xl p-4">
+                    <h3 className="text-xs font-bold text-text-secondary uppercase mb-3">Lịch sử gần đây</h3>
+                    <div className="space-y-3">
+                        {history.slice(0, 3).map((order) => {
+                            const pnl = parseFloat(order.pnl || '0');
+                            return (
+                                <div key={order.ordId} className="flex items-center justify-between text-xs border-b border-white/5 last:border-0 pb-2 last:pb-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${pnl >= 0 ? 'bg-bullish' : 'bg-bearish'}`}></div>
+                                        <span className="font-bold text-white">{order.instId.split('-')[0]}</span>
+                                        <span className="text-[10px] text-text-secondary">{order.side === 'buy' ? 'Long' : 'Short'}</span>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                                    <span className={`font-bold ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                                        {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}$
+                                    </span>
+                                </div>
+                            )
+                        })}
+                        {history.length === 0 && <p className="text-[10px] text-text-secondary italic text-center">Chưa có lịch sử</p>}
+                    </div>
                 </div>
 
             </div>
