@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getAccountDetail, getOpenPositions, AccountBalance, Position, getOKXSettings } from '../services/okxService';
+import { getAccountDetail, getOpenPositions, getHistory, AccountBalance, Position, getOKXSettings } from '../services/okxService';
 import SettingsModal from '../components/SettingsModal';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 const Journal: React.FC<Props> = ({ onNavigate }) => {
     const [balance, setBalance] = useState<AccountBalance | null>(null);
     const [positions, setPositions] = useState<Position[]>([]);
+    const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showSettings, setShowSettings] = useState(false);
@@ -28,12 +29,14 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
         setHasKey(true);
 
         try {
-            const [balData, posData] = await Promise.all([
+            const [balData, posData, histData] = await Promise.all([
                 getAccountDetail(),
-                getOpenPositions()
+                getOpenPositions(),
+                getHistory()
             ]);
             setBalance(balData);
             setPositions(posData);
+            setHistory(histData || []);
         } catch (err: any) {
             setError(err.message || 'Lỗi tải dữ liệu');
         } finally {
@@ -179,6 +182,41 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     )}
                 </div>
+
+                {/* HISTORY LIST */}
+                <div>
+                    <h3 className="text-sm font-bold text-text-secondary uppercase mb-3 px-1 mt-6">Lịch sử lệnh đã đóng (Gần đây)</h3>
+                    {history.length === 0 ? (
+                        <p className="text-xs text-text-secondary italic px-1">Chưa có dữ liệu lịch sử.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {history.map((order: any) => {
+                                const isBuy = order.side === 'buy';
+                                const pnl = parseFloat(order.pnl || '0');
+                                return (
+                                    <div key={order.ordId} className="bg-surface/50 rounded-lg p-3 border border-white/5 flex justify-between items-center">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-bold px-1 rounded ${isBuy ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
+                                                    {isBuy ? 'MUA' : order.side === 'sell' ? 'BÁN' : order.side}
+                                                </span>
+                                                <span className="font-bold text-sm">{order.instId.replace('-USDT-SWAP', '')}</span>
+                                            </div>
+                                            <p className="text-[10px] text-text-secondary">{new Date(parseInt(order.uTime)).toLocaleString('vi-VN')}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`font-bold ${pnl >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                                                {pnl > 0 ? '+' : ''}{pnl.toFixed(2)} $
+                                            </p>
+                                            <p className="text-[10px] text-text-secondary">Giá: {order.avgPx}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
             </div>
 
             <SettingsModal isOpen={showSettings} onClose={() => { setShowSettings(false); fetchData(); }} />

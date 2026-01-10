@@ -124,11 +124,22 @@ export const getAccountDetail = async (): Promise<AccountBalance | null> => {
 
 export const getOpenPositions = async (): Promise<Position[]> => {
     try {
-        // Endpoint: /account/positions
+        // Endpoint: /account/positions (Get ALL types: Spot, Futures, Margin)
         const data = await fetchOKX('/account/positions');
         return data || [];
     } catch (error) {
         console.error('Fetch Positions Error:', error);
+        return [];
+    }
+};
+
+export const getHistory = async (): Promise<any[]> => {
+    try {
+        // Get last 10 filled orders (History)
+        const data = await fetchOKX('/trade/orders-history-archive?instType=SWAP&state=filled&limit=10');
+        return data || [];
+    } catch (error) {
+        // console.error('Fetch History Error:', error);
         return [];
     }
 };
