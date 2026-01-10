@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TelegramSettings, getTelegramSettings, saveTelegramSettings } from '../services/telegramService';
+import { TelegramSettings, getTelegramSettings, saveTelegramSettings, sendTelegramAlert } from '../services/telegramService';
 
 interface Props {
     isOpen: boolean;
@@ -14,6 +14,15 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             setSettings(getTelegramSettings());
         }
     }, [isOpen]);
+
+    const handleTestAlert = async () => {
+        if (!settings.botToken || !settings.chatId) {
+            alert('Vui lòng nhập Bot Token và Chat ID trước!');
+            return;
+        }
+        await sendTelegramAlert('🔔 Test: Kết nối Telegram thành công! Hệ thống sẵn sàng bắn tín hiệu.');
+        alert('Đã gửi tin nhắn test. Hãy kiểm tra điện thoại của bạn!');
+    };
 
     const handleSave = () => {
         saveTelegramSettings(settings);
@@ -95,12 +104,20 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         </label>
                     </div>
 
-                    <button
-                        onClick={handleSave}
-                        className="w-full bg-primary text-background font-bold py-3 rounded-xl hover:brightness-110 active:scale-[0.98] transition-all mt-2"
-                    >
-                        Lưu Cài Đặt
-                    </button>
+                    <div className="flex gap-3 mt-4">
+                        <button
+                            onClick={handleTestAlert}
+                            className="flex-1 bg-white/5 border border-white/10 text-white font-bold py-3 rounded-xl hover:bg-white/10 active:scale-[0.98] transition-all"
+                        >
+                            🔔 Test Thử
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            className="flex-[2] bg-primary text-background font-bold py-3 rounded-xl hover:brightness-110 active:scale-[0.98] transition-all"
+                        >
+                            Lưu Cài Đặt
+                        </button>
+                    </div>
 
                     <p className="text-[10px] text-text-secondary text-center mt-2 opacity-60">
                         Dữ liệu được lưu an toàn trên thiết bị của bạn.
