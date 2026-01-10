@@ -132,8 +132,8 @@ export const getOpenPositions = async (): Promise<Position[]> => {
 };
 
 export const getHistory = async (): Promise<any[]> => {
-    // Get last 7 days history (faster & more relevant than archive)
+    // Get last 100 orders (History) to calculate Daily/Monthly Stats
     // instType=SWAP is required for this endpoint
-    const data = await fetchOKX('/trade/orders-history?instType=SWAP&state=filled&limit=10');
+    const data = await fetchOKX('/trade/orders-history?instType=SWAP&state=filled&limit=100');
     return data || [];
 };

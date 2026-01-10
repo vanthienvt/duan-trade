@@ -54,14 +54,28 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
     // --- STATS CALCULATION ---
     const totalPnL = positions.reduce((sum, p) => sum + parseFloat(p.upl), 0);
 
-    // Win Rate from History (Last 10)
+    // Win Rate from History (Last 100)
     const closedOrders = history.filter(o => parseFloat(o.pnl) !== 0);
     const winningOrders = closedOrders.filter(o => parseFloat(o.pnl) > 0);
     const winRate = closedOrders.length > 0
         ? Math.round((winningOrders.length / closedOrders.length) * 100)
         : 0;
 
-    const totalRealizedPnL = closedOrders.reduce((sum, o) => sum + parseFloat(o.pnl), 0);
+    // --- PnL CALCULATIONS (Today & Month) ---
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    const dailyPnL = closedOrders
+        .filter(o => parseInt(o.fillTime || o.uTime) >= startOfDay)
+        .reduce((sum, o) => sum + parseFloat(o.pnl), 0);
+
+    const monthlyPnL = closedOrders
+        .filter(o => parseInt(o.fillTime || o.uTime) >= startOfMonth)
+        .reduce((sum, o) => sum + parseFloat(o.pnl), 0);
+
+    // Safe formatting helper
+    const safeBalance = balance && balance.totalEq ? parseFloat(balance.totalEq).toLocaleString() : '---';
 
     // --- RENDER ---
     if (!hasKey) {
@@ -99,35 +113,45 @@ const Journal: React.FC<Props> = ({ onNavigate }) => {
 
             <div className="px-4 space-y-6">
 
-                {/* 1. HERO SECTION: PORTFOLIO VALUE + WINRATE */}
-                <div className="grid grid-cols-3 gap-3">
-                    {/* Total Balance (Chiếm 2/3) */}
-                    <div className="col-span-2 bg-gradient-to-br from-surface to-surface/50 border border-white/5 rounded-2xl p-4 shadow-xl">
-                        <p className="text-[10px] uppercase font-bold text-text-secondary tracking-wider mb-1">Tổng Tài Sản</p>
-                        <div className="text-2xl font-black text-white tracking-tight">
-                            {balance ? `$${parseFloat(balance.totalEq).toLocaleString()}` : '---'}
+                {/* 1. HERO SECTION: PORTFOLIO VALUE + STATISTICS */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* Total Balance (Full Width Top) */}
+                    <div className="col-span-2 bg-gradient-to-br from-surface to-surface/50 border border-white/5 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-6 opacity-5">
+                            <span className="material-symbols-outlined text-9xl">attach_money</span>
                         </div>
-                        <div className="mt-4 flex items-center gap-2">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${totalRealizedPnL >= 0 ? 'bg-bullish/20 text-bullish' : 'bg-bearish/20 text-bearish'}`}>
-                                {totalRealizedPnL > 0 ? '+' : ''}{totalRealizedPnL.toFixed(2)}$ (Today)
-                            </span>
+                        <p className="text-[10px] uppercase font-bold text-text-secondary tracking-wider mb-1">Tổng Tài Sản</p>
+                        <div className="text-4xl font-black text-white tracking-tight flex items-baseline gap-1">
+                            {safeBalance} <span className="text-lg font-medium text-text-secondary">USDT</span>
                         </div>
                     </div>
 
-                    {/* Winrate Circle (Chiếm 1/3) */}
-                    <div className="col-span-1 bg-surface border border-white/5 rounded-2xl p-2 flex flex-col items-center justify-center relative shadow-xl">
-                        <div className="relative h-14 w-14 flex items-center justify-center">
-                            <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90">
-                                <circle cx="28" cy="28" r="24" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5" />
-                                <circle cx="28" cy="28" r="24" stroke="currentColor" strokeWidth="4" fill="transparent"
-                                    className={`${winRate >= 50 ? 'text-primary' : 'text-text-secondary'}`}
-                                    strokeDasharray={2 * Math.PI * 24}
-                                    strokeDashoffset={2 * Math.PI * 24 * (1 - winRate / 100)}
-                                />
-                            </svg>
-                            <span className="text-xs font-black">{winRate}%</span>
+                    {/* Today's PnL */}
+                    <div className="bg-surface border border-white/5 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-lg text-text-secondary">calendar_today</span>
+                            <span className="text-[10px] font-bold text-text-secondary uppercase">Hôm nay</span>
                         </div>
-                        <p className="text-[9px] font-bold text-text-secondary mt-1 uppercase">Win Rate</p>
+                        <div className={`text-xl font-black ${dailyPnL >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                            {dailyPnL > 0 ? '+' : ''}{dailyPnL.toFixed(2)}$
+                        </div>
+                    </div>
+
+                    {/* Monthly PnL */}
+                    <div className="bg-surface border border-white/5 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-lg text-text-secondary">date_range</span>
+                            <span className="text-[10px] font-bold text-text-secondary uppercase">Tháng này</span>
+                        </div>
+                        <div className={`text-xl font-black ${monthlyPnL >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                            {monthlyPnL > 0 ? '+' : ''}{monthlyPnL.toFixed(2)}$
+                        </div>
+                    </div>
+
+                    {/* Winrate Strip */}
+                    <div className="col-span-2 bg-surface border border-white/5 rounded-xl p-3 flex items-center justify-between">
+                        <span className="text-xs font-bold text-text-secondary uppercase">Tỷ lệ thắng (100 lệnh gần nhất)</span>
+                        <span className={`text-sm font-black ${winRate >= 50 ? 'text-primary' : 'text-text-secondary'}`}>{winRate}% Win</span>
                     </div>
                 </div>
 
