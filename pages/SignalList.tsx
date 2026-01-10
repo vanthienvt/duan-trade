@@ -13,6 +13,7 @@ interface Props {
 const SignalList: React.FC<Props> = ({ onNavigate }) => {
   const [signals, setSignals] = useState<MarketSignal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
   const [btcTrend, setBtcTrend] = useState<'UP' | 'DOWN' | 'NEUTRAL'>('NEUTRAL');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tất cả');
@@ -99,6 +100,7 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
       listToSort.sort((a, b) => b.confidence - a.confidence);
 
       setSignals(listToSort);
+      setLastUpdated(new Date().toLocaleTimeString('vi-VN'));
       setLoading(false);
     };
     fetchData();
@@ -119,7 +121,11 @@ const SignalList: React.FC<Props> = ({ onNavigate }) => {
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md px-4 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-extrabold">Tín Hiệu AI <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-black align-middle ml-2">v2.6</span></h1>
-          <p className="text-xs text-text-secondary font-medium">Bản đồ BTC: <span className={btcTrend === 'UP' ? 'text-bullish' : 'text-bearish'}>{btcTrend}</span></p>
+          <p className="text-xs text-text-secondary font-medium">
+            BTC: <span className={btcTrend === 'UP' ? 'text-bullish' : 'text-bearish'}>{btcTrend}</span>
+            <span className="mx-2 text-white/20">|</span>
+            <span className="text-[10px] text-text-secondary">Cập nhật: {lastUpdated}</span>
+          </p>
         </div>
         <button
           onClick={() => setShowSettings(true)}
